@@ -7,7 +7,7 @@ public class AuditLogDto
     public string UsuarioNombre { get; set; } = "Sistema";
     public string Accion { get; set; } = string.Empty;
     public string Model { get; set; } = string.Empty;
-    public long? ModelId { get; set; }
+    public string? ModelId { get; set; }
     public string? ValoresAnteriores { get; set; }
     public string? ValoresNuevos { get; set; }
     public string? IP { get; set; }

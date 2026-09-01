@@ -6,6 +6,9 @@ using Microsoft.OpenApi.Models;
 using SIPAC.API.Data;
 using SIPAC.API.Services;
 
+// ── Carga de variables de entorno desde .env ──────────────────────────────────
+LoadDotEnv();
+
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Database ────────────────────────────────────────────────────────────────
@@ -15,19 +18,24 @@ var isProduction = builder.Environment.IsProduction();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<AuditInterceptor>();
 
+var rawDatabaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection");
+
+var npgsqlConnection = ConvertPostgresUriToNpgsql(rawDatabaseUrl);
+
 builder.Services.AddDbContext<SipacDbContext>((sp, options) =>
 {
     var interceptor = sp.GetRequiredService<AuditInterceptor>();
     options.AddInterceptors(interceptor);
 
-    if (isProduction)
+    if (!string.IsNullOrWhiteSpace(npgsqlConnection) && (isProduction || Environment.GetEnvironmentVariable("DATABASE_URL") != null))
     {
-        // PostgreSQL para producción (Render / Supabase)
-        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+        // PostgreSQL para Supabase / Render / Producción
+        options.UseNpgsql(npgsqlConnection);
     }
     else
     {
-        // SQLite para desarrollo local — cero configuración
+        // SQLite para desarrollo local cuando no hay DATABASE_URL configurada
         options.UseSqlite(builder.Configuration.GetConnectionString("SqliteConnection") ?? "Data Source=sipac.db");
     }
 });
@@ -143,3 +151,132 @@ app.MapFallbackToFile("index.html");
 await SeedData.InitializeAsync(app.Services);
 
 app.Run();
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+static void LoadDotEnv()
+{
+    var currentDir = Directory.GetCurrentDirectory();
+    var candidates = new[]
+    {
+        Path.Combine(currentDir, ".env"),
+        Path.Combine(currentDir, "..", ".env"),
+        Path.Combine(AppContext.BaseDirectory, ".env"),
+        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".env"),
+        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".env")
+    };
+
+    foreach (var path in candidates)
+    {
+        try
+        {
+            var fullPath = Path.GetFullPath(path);
+            if (File.Exists(fullPath))
+            {
+                Console.WriteLine($"[Config] Cargando variables desde: {fullPath}");
+                foreach (var line in File.ReadAllLines(fullPath))
+                {
+                    var trimmed = line.Trim();
+                    if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith('#')) continue;
+                    var parts = trimmed.Split('=', 2);
+                    if (parts.Length == 2)
+                    {
+                        var key = parts[0].Trim();
+                        var val = parts[1].Trim().Trim('"', '\'');
+                        Environment.SetEnvironmentVariable(key, val);
+                    }
+                }
+                break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Config] Aviso al leer {path}: {ex.Message}");
+        }
+    }
+}
+
+static string? ConvertPostgresUriToNpgsql(string? connectionString)
+{
+    if (string.IsNullOrWhiteSpace(connectionString)) return null;
+
+    var trimmed = connectionString.Trim().Trim('"', '\'');
+
+    // Si ya viene en formato de pares clave=valor estándar de ADO.NET / Npgsql
+    if (trimmed.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||
+        trimmed.Contains("Server=", StringComparison.OrdinalIgnoreCase))
+    {
+        return trimmed;
+    }
+
+    if (trimmed.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+        trimmed.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+    {
+        try
+        {
+            // Quitar el prefijo del esquema
+            var withoutScheme = trimmed.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase)
+                ? trimmed.Substring("postgresql://".Length)
+                : trimmed.Substring("postgres://".Length);
+
+            // Encontrar el último '@' que separa las credenciales del host
+            var lastAtIndex = withoutScheme.LastIndexOf('@');
+            if (lastAtIndex > 0)
+            {
+                var credentialsPart = withoutScheme.Substring(0, lastAtIndex);
+                var hostPart = withoutScheme.Substring(lastAtIndex + 1);
+
+                // Separar username y password (el password puede contener ':', '/', '&', '?', etc.)
+                var colonIndex = credentialsPart.IndexOf(':');
+                var username = colonIndex >= 0 ? credentialsPart.Substring(0, colonIndex) : credentialsPart;
+                var password = colonIndex >= 0 ? credentialsPart.Substring(colonIndex + 1) : "";
+
+                // Decodificar si estuviera URL-encoded
+                username = Uri.UnescapeDataString(username);
+                password = Uri.UnescapeDataString(password);
+
+                // Separar host, puerto, base de datos y parámetros
+                var slashIndex = hostPart.IndexOf('/');
+                var hostAndPort = slashIndex >= 0 ? hostPart.Substring(0, slashIndex) : hostPart;
+                var dbAndQuery = slashIndex >= 0 ? hostPart.Substring(slashIndex + 1) : "postgres";
+
+                var queryIndex = dbAndQuery.IndexOf('?');
+                var database = queryIndex >= 0 ? dbAndQuery.Substring(0, queryIndex) : dbAndQuery;
+                if (string.IsNullOrWhiteSpace(database)) database = "postgres";
+
+                var host = hostAndPort;
+                var port = 5432;
+
+                var colonHostIndex = hostAndPort.LastIndexOf(':');
+                if (colonHostIndex >= 0)
+                {
+                    host = hostAndPort.Substring(0, colonHostIndex);
+                    if (int.TryParse(hostAndPort.Substring(colonHostIndex + 1), out var parsedPort))
+                    {
+                        port = parsedPort;
+                    }
+                }
+
+                var builder = new Npgsql.NpgsqlConnectionStringBuilder
+                {
+                    Host = host,
+                    Port = port,
+                    Database = database,
+                    Username = username,
+                    Password = password,
+                    SslMode = Npgsql.SslMode.Require,
+                    Pooling = true
+                };
+
+                Console.WriteLine($"[Database] Conectando a PostgreSQL ({builder.Host}:{builder.Port}/{builder.Database}) como usuario '{builder.Username}'");
+                return builder.ConnectionString;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Database] Error al procesar DATABASE_URL: {ex.Message}");
+        }
+    }
+
+    return trimmed;
+}
+

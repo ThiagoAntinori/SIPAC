@@ -22,9 +22,9 @@ public class OrdenesTrabajoController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<OtDto>>> GetAll(
         [FromQuery] string? estado,
-        [FromQuery] long? responsableId,
-        [FromQuery] long? categoriaId,
-        [FromQuery] long? unidadFuncionalId,
+        [FromQuery] Guid? responsableId,
+        [FromQuery] Guid? categoriaId,
+        [FromQuery] Guid? unidadFuncionalId,
         [FromQuery] bool? soloAlertas,
         [FromQuery] string? search)
     {
@@ -43,17 +43,17 @@ public class OrdenesTrabajoController : ControllerBase
             query = query.Where(o => o.Estado.ToLower() == estado.Trim().ToLower());
         }
 
-        if (responsableId.HasValue && responsableId.Value > 0)
+        if (responsableId.HasValue && responsableId.Value != Guid.Empty)
         {
             query = query.Where(o => o.ResponsableId == responsableId.Value);
         }
 
-        if (categoriaId.HasValue && categoriaId.Value > 0)
+        if (categoriaId.HasValue && categoriaId.Value != Guid.Empty)
         {
             query = query.Where(o => o.CategoriaId == categoriaId.Value);
         }
 
-        if (unidadFuncionalId.HasValue && unidadFuncionalId.Value > 0)
+        if (unidadFuncionalId.HasValue && unidadFuncionalId.Value != Guid.Empty)
         {
             query = query.Where(o => o.UnidadFuncionalId == unidadFuncionalId.Value);
         }
@@ -62,7 +62,7 @@ public class OrdenesTrabajoController : ControllerBase
         {
             var s = search.Trim().ToLower();
             query = query.Where(o =>
-                o.IdOt.ToString().Contains(s) ||
+                o.Id.ToString().Contains(s) ||
                 o.ProblemaReportado.ToLower().Contains(s) ||
                 (o.SolucionRealizada != null && o.SolucionRealizada.ToLower().Contains(s)) ||
                 (o.Observaciones != null && o.Observaciones.ToLower().Contains(s)) ||
@@ -91,7 +91,7 @@ public class OrdenesTrabajoController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<OtDto>> GetById(long id)
+    public async Task<ActionResult<OtDto>> GetById(Guid id)
     {
         var ot = await _context.OrdenesTrabajo
             .AsNoTracking()
@@ -101,7 +101,7 @@ public class OrdenesTrabajoController : ControllerBase
             .Include(o => o.Egresos).ThenInclude(e => e.Articulo)
             .Include(o => o.Egresos).ThenInclude(e => e.Usuario)
             .Include(o => o.Bitacora)
-            .FirstOrDefaultAsync(x => x.IdOt == id);
+            .FirstOrDefaultAsync(x => x.Id == id);
 
         if (ot == null) return NotFound(new { message = $"Orden de Trabajo #{id} no encontrada" });
 
@@ -111,17 +111,17 @@ public class OrdenesTrabajoController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<OtDto>> Create([FromBody] CreateOtDto request)
     {
-        if (request.UnidadFuncionalId <= 0)
+        if (request.UnidadFuncionalId == Guid.Empty)
             return BadRequest(new { message = "Debe seleccionar una Unidad Funcional válida" });
 
-        if (request.ResponsableId <= 0)
+        if (request.ResponsableId == Guid.Empty)
             return BadRequest(new { message = "Debe seleccionar un Responsable" });
 
-        if (request.CategoriaId <= 0)
+        if (request.CategoriaId == Guid.Empty)
             return BadRequest(new { message = "Debe seleccionar un Rubro / Categoría" });
 
-        if (string.IsNullOrWhiteSpace(request.ProblemaReportado))
-            return BadRequest(new { message = "Debe describir el problema reportado" });
+        if (string.IsNullOrWhiteSpace(request.ProblemaReportado) || request.ProblemaReportado.Trim().Length < 3)
+            return BadRequest(new { message = "Debe describir el problema reportado (mínimo 3 caracteres)" });
 
         var uf = await _context.UnidadesFuncionales.FindAsync(request.UnidadFuncionalId);
         if (uf == null)
@@ -137,6 +137,7 @@ public class OrdenesTrabajoController : ControllerBase
 
         var ot = new OrdenTrabajo
         {
+            Id = Guid.NewGuid(),
             UnidadFuncionalId = request.UnidadFuncionalId,
             ResponsableId = request.ResponsableId,
             CategoriaId = request.CategoriaId,
@@ -153,8 +154,9 @@ public class OrdenesTrabajoController : ControllerBase
         // Registrar auditoría en bitácora
         var bitacora = new RegistroBitacoraOt
         {
-            OrdenTrabajoId = ot.IdOt,
-            TipoOperacion = "ALTA",
+            Id = Guid.NewGuid(),
+            OrdenTrabajoId = ot.Id,
+            TipoOperacion = "CREACION",
             DetalleCambio = $"Alta de OT para {uf.DisplayNombre}. Responsable: {responsable.Nombre}. Rubro: {categoria.Nombre}. Problema: {ot.ProblemaReportado}",
             FechaHora = DateTime.UtcNow
         };
@@ -167,29 +169,29 @@ public class OrdenesTrabajoController : ControllerBase
         ot.Categoria = categoria;
         ot.Bitacora = new List<RegistroBitacoraOt> { bitacora };
 
-        return CreatedAtAction(nameof(GetById), new { id = ot.IdOt }, MapToDto(ot));
+        return CreatedAtAction(nameof(GetById), new { id = ot.Id }, MapToDto(ot));
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult<OtDto>> Update(long id, [FromBody] UpdateOtDto request)
+    public async Task<ActionResult<OtDto>> Update(Guid id, [FromBody] UpdateOtDto request)
     {
         var ot = await _context.OrdenesTrabajo
             .Include(o => o.UnidadFuncional)
             .Include(o => o.Responsable)
             .Include(o => o.Categoria)
             .Include(o => o.Bitacora)
-            .FirstOrDefaultAsync(o => o.IdOt == id);
+            .FirstOrDefaultAsync(o => o.Id == id);
 
         if (ot == null) return NotFound(new { message = $"Orden de Trabajo #{id} no encontrada" });
 
-        if (request.ResponsableId <= 0)
+        if (request.ResponsableId == Guid.Empty)
             return BadRequest(new { message = "Debe seleccionar un Responsable" });
 
-        if (request.CategoriaId <= 0)
+        if (request.CategoriaId == Guid.Empty)
             return BadRequest(new { message = "Debe seleccionar un Rubro / Categoría" });
 
-        if (string.IsNullOrWhiteSpace(request.ProblemaReportado))
-            return BadRequest(new { message = "El problema reportado no puede quedar vacío" });
+        if (string.IsNullOrWhiteSpace(request.ProblemaReportado) || request.ProblemaReportado.Trim().Length < 3)
+            return BadRequest(new { message = "El problema reportado no puede quedar vacío (mínimo 3 caracteres)" });
 
         // Validación estricta para pasar a Finalizado
         var nuevoEstado = request.Estado?.Trim() ?? ot.Estado;
@@ -259,10 +261,11 @@ public class OrdenesTrabajoController : ControllerBase
 
         if (cambios.Count > 0)
         {
-            var tipoOp = estadoCambiado ? "CAMBIO_ESTADO" : "MODIFICACION";
+            var tipoOp = estadoCambiado ? "CAMBIO_ESTADO" : "ACTUALIZACION";
             var bitacora = new RegistroBitacoraOt
             {
-                OrdenTrabajoId = ot.IdOt,
+                Id = Guid.NewGuid(),
+                OrdenTrabajoId = ot.Id,
                 TipoOperacion = tipoOp,
                 DetalleCambio = string.Join("; ", cambios),
                 FechaHora = DateTime.UtcNow
@@ -276,11 +279,11 @@ public class OrdenesTrabajoController : ControllerBase
     }
 
     [HttpPatch("{id}/estado")]
-    public async Task<ActionResult> ChangeEstado(long id, [FromBody] ChangeEstadoOtDto request)
+    public async Task<ActionResult> ChangeEstado(Guid id, [FromBody] ChangeEstadoOtDto request)
     {
         var ot = await _context.OrdenesTrabajo
             .Include(o => o.Bitacora)
-            .FirstOrDefaultAsync(o => o.IdOt == id);
+            .FirstOrDefaultAsync(o => o.Id == id);
 
         if (ot == null) return NotFound(new { message = $"Orden de Trabajo #{id} no encontrada" });
 
@@ -309,7 +312,8 @@ public class OrdenesTrabajoController : ControllerBase
         var sol = ot.SolucionRealizada ?? "N/A";
         var bitacora = new RegistroBitacoraOt
         {
-            OrdenTrabajoId = ot.IdOt,
+            Id = Guid.NewGuid(),
+            OrdenTrabajoId = ot.Id,
             TipoOperacion = "CAMBIO_ESTADO",
             DetalleCambio = $"Cambio de estado: '{estadoAnterior}' -> '{nuevoEstado}'. Solución: {sol}",
             FechaHora = DateTime.UtcNow
@@ -322,13 +326,13 @@ public class OrdenesTrabajoController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<ActionResult> Delete(long id)
+    public async Task<ActionResult> Delete(Guid id)
     {
         var ot = await _context.OrdenesTrabajo
             .IgnoreQueryFilters()
             .Include(o => o.Bitacora)
             .Include(o => o.Egresos)
-            .FirstOrDefaultAsync(o => o.IdOt == id);
+            .FirstOrDefaultAsync(o => o.Id == id);
 
         if (ot == null) return NotFound(new { message = $"Orden de Trabajo #{id} no encontrada" });
 
@@ -337,12 +341,12 @@ public class OrdenesTrabajoController : ControllerBase
 
         if (isPending && isUnder24Hours)
         {
-            // RF04 - Baja Física (Hard Delete)
+            // RF04 - Hard delete permitido dentro de 24hs pendientes
             _context.OrdenesTrabajo.Remove(ot);
             await _context.SaveChangesAsync();
             return Ok(new
             {
-                message = "Orden de Trabajo eliminada físicamente (Baja Física ejecutada por estar en estado 'Pendiente' con menos de 24 horas)",
+                message = "Orden de Trabajo eliminada físicamente (Baja ejecutada por estar en estado 'Pendiente' con menos de 24 horas)",
                 tipoBaja = "BAJA_FISICA"
             });
         }
@@ -356,7 +360,8 @@ public class OrdenesTrabajoController : ControllerBase
             var horasAntiguedad = (DateTime.UtcNow - ot.CreatedAt).TotalHours;
             var bitacora = new RegistroBitacoraOt
             {
-                OrdenTrabajoId = ot.IdOt,
+                Id = Guid.NewGuid(),
+                OrdenTrabajoId = ot.Id,
                 TipoOperacion = "BAJA_LOGICA",
                 DetalleCambio = $"Baja lógica ejecutada el {DateTime.UtcNow:dd/MM/yyyy HH:mm} UTC. Motivo: Antigüedad >24hs ({horasAntiguedad:F1}hs) o estado no Pendiente.",
                 FechaHora = DateTime.UtcNow
@@ -389,8 +394,8 @@ public class OrdenesTrabajoController : ControllerBase
 
         return new OtDto
         {
-            IdOt = o.IdOt,
-            NumeroOT = $"OT-{o.CreatedAt.Year}-{o.IdOt:D4}",
+            IdOt = o.Id,
+            NumeroOT = o.NumeroOT,
             UnidadFuncionalId = o.UnidadFuncionalId,
             UnidadFuncionalDisplay = ufDisplay,
             SectorEscalera = sector,

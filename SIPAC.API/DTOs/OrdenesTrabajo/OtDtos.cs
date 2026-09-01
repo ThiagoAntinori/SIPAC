@@ -2,16 +2,16 @@ namespace SIPAC.API.DTOs.OrdenesTrabajo;
 
 public class OtDto
 {
-    public long IdOt { get; set; }
+    public Guid IdOt { get; set; }
     public string NumeroOT { get; set; } = string.Empty;
-    public long UnidadFuncionalId { get; set; }
+    public Guid UnidadFuncionalId { get; set; }
     public string UnidadFuncionalDisplay { get; set; } = string.Empty;
     public string SectorEscalera { get; set; } = string.Empty;
     public string? Piso { get; set; }
     public string? Depto { get; set; }
-    public long ResponsableId { get; set; }
+    public Guid ResponsableId { get; set; }
     public string ResponsableNombre { get; set; } = string.Empty;
-    public long CategoriaId { get; set; }
+    public Guid CategoriaId { get; set; }
     public string CategoriaNombre { get; set; } = string.Empty;
     public string ProblemaReportado { get; set; } = string.Empty;
     public string? SolucionRealizada { get; set; }
@@ -27,17 +27,17 @@ public class OtDto
 
 public class CreateOtDto
 {
-    public long UnidadFuncionalId { get; set; }
-    public long ResponsableId { get; set; }
-    public long CategoriaId { get; set; }
+    public Guid UnidadFuncionalId { get; set; }
+    public Guid ResponsableId { get; set; }
+    public Guid CategoriaId { get; set; }
     public string ProblemaReportado { get; set; } = string.Empty;
     public string? Observaciones { get; set; }
 }
 
 public class UpdateOtDto
 {
-    public long ResponsableId { get; set; }
-    public long CategoriaId { get; set; }
+    public Guid ResponsableId { get; set; }
+    public Guid CategoriaId { get; set; }
     public string ProblemaReportado { get; set; } = string.Empty;
     public string? SolucionRealizada { get; set; }
     public string Estado { get; set; } = "Pendiente";
@@ -53,7 +53,7 @@ public class ChangeEstadoOtDto
 
 public class OtBitacoraItemDto
 {
-    public long Id { get; set; }
+    public Guid Id { get; set; }
     public string TipoOperacion { get; set; } = string.Empty;
     public string DetalleCambio { get; set; } = string.Empty;
     public DateTime FechaHora { get; set; }

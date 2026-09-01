@@ -23,7 +23,7 @@ public class EgresosController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<EgresoDto>>> GetAll(
         [FromQuery] int? articuloId,
-        [FromQuery] long? ordenTrabajoId,
+        [FromQuery] Guid? ordenTrabajoId,
         [FromQuery] DateTime? desde,
         [FromQuery] DateTime? hasta)
     {
@@ -38,7 +38,7 @@ public class EgresosController : ControllerBase
         if (articuloId.HasValue && articuloId.Value > 0)
             query = query.Where(e => e.ArticuloId == articuloId.Value);
 
-        if (ordenTrabajoId.HasValue && ordenTrabajoId.Value > 0)
+        if (ordenTrabajoId.HasValue && ordenTrabajoId.Value != Guid.Empty)
             query = query.Where(e => e.OrdenTrabajoId == ordenTrabajoId.Value);
 
         if (desde.HasValue)
@@ -56,11 +56,9 @@ public class EgresosController : ControllerBase
                 ArticuloNombre = e.Articulo != null ? e.Articulo.Nombre : "",
                 UnidadMedida = e.Articulo != null ? e.Articulo.UnidadMedida : "",
                 OrdenTrabajoId = e.OrdenTrabajoId,
-                NumeroOT = e.OrdenTrabajo != null ? $"OT-{e.OrdenTrabajo.CreatedAt.Year}-{e.OrdenTrabajo.IdOt:D4}" : "",
+                NumeroOT = e.OrdenTrabajo != null ? e.OrdenTrabajo.NumeroOT : "",
                 UnidadFuncionalDisplay = e.OrdenTrabajo != null && e.OrdenTrabajo.UnidadFuncional != null
-                    ? (e.OrdenTrabajo.UnidadFuncional.SectorEscalera.ToUpper() == "LOCAL"
-                        ? $"LOCAL Nº {e.OrdenTrabajo.UnidadFuncional.Piso}"
-                        : $"UF {e.OrdenTrabajo.UnidadFuncional.Id} (Sec {e.OrdenTrabajo.UnidadFuncional.SectorEscalera} - {e.OrdenTrabajo.UnidadFuncional.Piso} \"{e.OrdenTrabajo.UnidadFuncional.Depto}\")")
+                    ? e.OrdenTrabajo.UnidadFuncional.DisplayNombre
                     : "",
                 EmpleadoNombre = e.OrdenTrabajo != null && e.OrdenTrabajo.Responsable != null ? e.OrdenTrabajo.Responsable.Nombre : "",
                 Cantidad = e.Cantidad,
@@ -90,7 +88,7 @@ public class EgresosController : ControllerBase
         var ot = await _context.OrdenesTrabajo
             .Include(o => o.Responsable)
             .Include(o => o.UnidadFuncional)
-            .FirstOrDefaultAsync(o => o.IdOt == request.OrdenTrabajoId);
+            .FirstOrDefaultAsync(o => o.Id == request.OrdenTrabajoId);
 
         if (ot == null)
             return BadRequest(new { message = "La Orden de Trabajo seleccionada no existe o fue dada de baja" });
@@ -124,8 +122,9 @@ public class EgresosController : ControllerBase
         var obs = string.IsNullOrWhiteSpace(request.Observacion) ? "-" : request.Observacion;
         var bitacora = new RegistroBitacoraOt
         {
-            OrdenTrabajoId = ot.IdOt,
-            TipoOperacion = "MODIFICACION",
+            Id = Guid.NewGuid(),
+            OrdenTrabajoId = ot.Id,
+            TipoOperacion = "ACTUALIZACION",
             DetalleCambio = $"Consumo de pañol despachado: {request.Cantidad} {articulo.UnidadMedida} de '{articulo.Nombre}'. Obs: {obs}",
             FechaHora = DateTime.UtcNow
         };
@@ -136,9 +135,7 @@ public class EgresosController : ControllerBase
         var usuario = await _context.Usuarios.FindAsync(userId);
 
         var ufDisplay = ot.UnidadFuncional != null
-            ? (ot.UnidadFuncional.SectorEscalera.ToUpper() == "LOCAL"
-                ? $"LOCAL Nº {ot.UnidadFuncional.Piso}"
-                : $"UF {ot.UnidadFuncional.Id} (Sec {ot.UnidadFuncional.SectorEscalera} - {ot.UnidadFuncional.Piso} \"{ot.UnidadFuncional.Depto}\")")
+            ? ot.UnidadFuncional.DisplayNombre
             : "";
 
         return Ok(new EgresoDto
@@ -148,7 +145,7 @@ public class EgresosController : ControllerBase
             ArticuloNombre = articulo.Nombre,
             UnidadMedida = articulo.UnidadMedida,
             OrdenTrabajoId = egreso.OrdenTrabajoId,
-            NumeroOT = $"OT-{ot.CreatedAt.Year}-{ot.IdOt:D4}",
+            NumeroOT = ot.NumeroOT,
             UnidadFuncionalDisplay = ufDisplay,
             EmpleadoNombre = ot.Responsable?.Nombre ?? "",
             Cantidad = egreso.Cantidad,

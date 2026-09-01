@@ -12,7 +12,14 @@ public static class SeedData
         var context = scope.ServiceProvider.GetRequiredService<SipacDbContext>();
         var authService = scope.ServiceProvider.GetRequiredService<AuthService>();
 
-        await context.Database.MigrateAsync();
+        try
+        {
+            await context.Database.MigrateAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SeedData] Aviso al verificar migraciones de base de datos: {ex.Message}");
+        }
 
         // ── 1. Seed Categorías de Pañol / Artículos ──────────────────────────────
         if (!await context.Categorias.AnyAsync())
@@ -109,7 +116,6 @@ public static class SeedData
         if (!await context.UnidadesFuncionales.AnyAsync())
         {
             var ufs = new List<UnidadFuncional>();
-            long nextId = 1;
 
             // Sectores Residenciales Estándar (28, 45, 116, 120)
             var sectores = new[] { "28", "45", "116", "120" };
@@ -124,7 +130,7 @@ public static class SeedData
                     {
                         ufs.Add(new UnidadFuncional
                         {
-                            Id = nextId++,
+                            Id = Guid.NewGuid(),
                             SectorEscalera = sec,
                             Piso = piso,
                             Depto = depto
@@ -146,7 +152,7 @@ public static class SeedData
                     {
                         ufs.Add(new UnidadFuncional
                         {
-                            Id = nextId++,
+                            Id = Guid.NewGuid(),
                             SectorEscalera = torre,
                             Piso = piso,
                             Depto = depto
@@ -160,7 +166,7 @@ public static class SeedData
             {
                 ufs.Add(new UnidadFuncional
                 {
-                    Id = 1400 + i, // IDs históricos 1401 - 1415
+                    Id = Guid.NewGuid(),
                     SectorEscalera = "LOCAL",
                     Piso = i.ToString(),
                     Depto = null
@@ -278,152 +284,164 @@ public static class SeedData
             var catPlomeria = await context.CategoriasTrabajo.FirstOrDefaultAsync(c => c.Nombre.Contains("Plomería"));
             var catElectricidad = await context.CategoriasTrabajo.FirstOrDefaultAsync(c => c.Nombre.Contains("Electricidad"));
             var catIluminacion = await context.CategoriasTrabajo.FirstOrDefaultAsync(c => c.Nombre.Contains("Iluminación"));
-            var catMantenimiento = await context.CategoriasTrabajo.FirstOrDefaultAsync(c => c.Nombre.Contains("Mantenimiento"));
 
             var ufDepto1 = await context.UnidadesFuncionales.FirstOrDefaultAsync(u => u.SectorEscalera == "28" && u.Piso == "2" && u.Depto == "B");
             var ufLocal3 = await context.UnidadesFuncionales.FirstOrDefaultAsync(u => u.SectorEscalera == "LOCAL" && u.Piso == "3");
             var ufTorre = await context.UnidadesFuncionales.FirstOrDefaultAsync(u => u.SectorEscalera == "Torre A" && u.Piso == "4" && u.Depto == "2");
             var ufAlerta = await context.UnidadesFuncionales.FirstOrDefaultAsync(u => u.SectorEscalera == "45" && u.Piso == "1" && u.Depto == "A");
 
-            var adminUser = await context.Usuarios.FirstOrDefaultAsync(u => u.Username == "admin");
-
-            // OT 1: ALERTA +5 DÍAS PENDIENTE (Creada hace 7 días)
-            var ot1 = new OrdenTrabajo
+            if (ufAlerta != null && resp1 != null && catPlomeria != null)
             {
-                UnidadFuncionalId = ufAlerta?.Id ?? 1,
-                ResponsableId = resp1?.Id ?? 1,
-                CategoriaId = catPlomeria?.Id ?? 1,
-                ProblemaReportado = "Pérdida de agua continua en canilla de paso de cocina. Filtración hacia piso inferior.",
-                Estado = "Pendiente",
-                Observaciones = "Reclamo reiterado por propietario. Prioridad urgente.",
-                CreatedAt = DateTime.UtcNow.AddDays(-7),
-                UpdatedAt = DateTime.UtcNow.AddDays(-7)
-            };
+                var adminUser = await context.Usuarios.FirstOrDefaultAsync(u => u.Username == "admin");
 
-            // OT 2: En Proceso (Local 3)
-            var ot2 = new OrdenTrabajo
-            {
-                UnidadFuncionalId = ufLocal3?.Id ?? 1403,
-                ResponsableId = resp2?.Id ?? 2,
-                CategoriaId = catElectricidad?.Id ?? 2,
-                ProblemaReportado = "Disyunción repentina de térmicas de iluminación de marquesina y vidriera.",
-                Estado = "En Proceso",
-                Observaciones = "Revisión de cableado exterior y aislamiento.",
-                CreatedAt = DateTime.UtcNow.AddDays(-2),
-                UpdatedAt = DateTime.UtcNow.AddDays(-1)
-            };
-
-            // OT 3: Pendiente Reciente (<24h)
-            var ot3 = new OrdenTrabajo
-            {
-                UnidadFuncionalId = ufTorre?.Id ?? 2,
-                ResponsableId = resp1?.Id ?? 1,
-                CategoriaId = catIluminacion?.Id ?? 3,
-                ProblemaReportado = "Foco quemado y zócalo flojo en palier central.",
-                Estado = "Pendiente",
-                Observaciones = "Turno mañana.",
-                CreatedAt = DateTime.UtcNow.AddHours(-3),
-                UpdatedAt = DateTime.UtcNow.AddHours(-3)
-            };
-
-            // OT 4: Finalizada con Solución y Consumo de Materiales
-            var ot4 = new OrdenTrabajo
-            {
-                UnidadFuncionalId = ufDepto1?.Id ?? 1,
-                ResponsableId = resp3?.Id ?? 3,
-                CategoriaId = catPlomeria?.Id ?? 1,
-                ProblemaReportado = "Filtración en codo de termofusión bajo mesada.",
-                SolucionRealizada = "Se reemplazó tramo de 1 metro de caño termofusión de 20mm y se colocaron 2 cuplas y teflón de alta densidad. Prueba hidráulica realizada sin pérdidas.",
-                Estado = "Finalizado",
-                Observaciones = "Trabajo terminado con conformidad de morador.",
-                CreatedAt = DateTime.UtcNow.AddDays(-3),
-                UpdatedAt = DateTime.UtcNow.AddDays(-1)
-            };
-
-            await context.OrdenesTrabajo.AddRangeAsync(ot1, ot2, ot3, ot4);
-            await context.SaveChangesAsync();
-
-            // Bitácoras iniciales
-            var bitacoras = new List<RegistroBitacoraOt>
-            {
-                new()
+                // OT 1: ALERTA +5 DÍAS PENDIENTE (Creada hace 7 días)
+                var ot1 = new OrdenTrabajo
                 {
-                    OrdenTrabajoId = ot1.IdOt,
-                    TipoOperacion = "ALTA",
-                    DetalleCambio = "Alta de OT registrada en sistema.",
-                    FechaHora = ot1.CreatedAt
-                },
-                new()
-                {
-                    OrdenTrabajoId = ot2.IdOt,
-                    TipoOperacion = "ALTA",
-                    DetalleCambio = "Alta de OT registrada en sistema.",
-                    FechaHora = ot2.CreatedAt
-                },
-                new()
-                {
-                    OrdenTrabajoId = ot2.IdOt,
-                    TipoOperacion = "CAMBIO_ESTADO",
-                    DetalleCambio = "Cambio de estado de 'Pendiente' a 'En Proceso'.",
-                    FechaHora = ot2.UpdatedAt
-                },
-                new()
-                {
-                    OrdenTrabajoId = ot3.IdOt,
-                    TipoOperacion = "ALTA",
-                    DetalleCambio = "Alta de OT registrada en sistema.",
-                    FechaHora = ot3.CreatedAt
-                },
-                new()
-                {
-                    OrdenTrabajoId = ot4.IdOt,
-                    TipoOperacion = "ALTA",
-                    DetalleCambio = "Alta de OT registrada en sistema.",
-                    FechaHora = ot4.CreatedAt
-                },
-                new()
-                {
-                    OrdenTrabajoId = ot4.IdOt,
-                    TipoOperacion = "CAMBIO_ESTADO",
-                    DetalleCambio = "Cambio de estado a 'Finalizado'. Solución registrada.",
-                    FechaHora = ot4.UpdatedAt
-                }
-            };
+                    Id = Guid.NewGuid(),
+                    UnidadFuncionalId = ufAlerta.Id,
+                    ResponsableId = resp1.Id,
+                    CategoriaId = catPlomeria.Id,
+                    ProblemaReportado = "Pérdida de agua continua en canilla de paso de cocina. Filtración hacia piso inferior.",
+                    Estado = "Pendiente",
+                    Observaciones = "Reclamo reiterado por propietario. Prioridad urgente.",
+                    CreatedAt = DateTime.UtcNow.AddDays(-7),
+                    UpdatedAt = DateTime.UtcNow.AddDays(-7)
+                };
 
-            await context.BitacoraOt.AddRangeAsync(bitacoras);
+                // OT 2: En Proceso (Local 3)
+                var ot2 = new OrdenTrabajo
+                {
+                    Id = Guid.NewGuid(),
+                    UnidadFuncionalId = ufLocal3?.Id ?? ufAlerta.Id,
+                    ResponsableId = resp2?.Id ?? resp1.Id,
+                    CategoriaId = catElectricidad?.Id ?? catPlomeria.Id,
+                    ProblemaReportado = "Disyunción repentina de térmicas de iluminación de marquesina y vidriera.",
+                    Estado = "En Proceso",
+                    Observaciones = "Revisión de cableado exterior y aislamiento.",
+                    CreatedAt = DateTime.UtcNow.AddDays(-2),
+                    UpdatedAt = DateTime.UtcNow.AddDays(-1)
+                };
 
-            // Egresos consumidos vinculados a OT 4
-            var canoTermo = await context.Articulos.FirstOrDefaultAsync(a => a.Nombre.Contains("Termofusión"));
-            var teflon = await context.Articulos.FirstOrDefaultAsync(a => a.Nombre.Contains("Teflón"));
+                // OT 3: Pendiente Reciente (<24h)
+                var ot3 = new OrdenTrabajo
+                {
+                    Id = Guid.NewGuid(),
+                    UnidadFuncionalId = ufTorre?.Id ?? ufAlerta.Id,
+                    ResponsableId = resp1.Id,
+                    CategoriaId = catIluminacion?.Id ?? catPlomeria.Id,
+                    ProblemaReportado = "Foco quemado y zócalo flojo en palier central.",
+                    Estado = "Pendiente",
+                    Observaciones = "Turno mañana.",
+                    CreatedAt = DateTime.UtcNow.AddHours(-3),
+                    UpdatedAt = DateTime.UtcNow.AddHours(-3)
+                };
 
-            if (canoTermo != null && teflon != null)
-            {
-                var egresos = new List<EgresoConsumo>
+                // OT 4: Finalizada con Solución y Consumo de Materiales
+                var ot4 = new OrdenTrabajo
+                {
+                    Id = Guid.NewGuid(),
+                    UnidadFuncionalId = ufDepto1?.Id ?? ufAlerta.Id,
+                    ResponsableId = resp3?.Id ?? resp1.Id,
+                    CategoriaId = catPlomeria.Id,
+                    ProblemaReportado = "Filtración en codo de termofusión bajo mesada.",
+                    SolucionRealizada = "Se reemplazó tramo de 1 metro de caño termofusión de 20mm y se colocaron 2 cuplas y teflón de alta densidad. Prueba hidráulica realizada sin pérdidas.",
+                    Estado = "Finalizado",
+                    Observaciones = "Trabajo terminado con conformidad de morador.",
+                    CreatedAt = DateTime.UtcNow.AddDays(-3),
+                    UpdatedAt = DateTime.UtcNow.AddDays(-1)
+                };
+
+                await context.OrdenesTrabajo.AddRangeAsync(ot1, ot2, ot3, ot4);
+                await context.SaveChangesAsync();
+
+                // Bitácoras iniciales
+                var bitacoras = new List<RegistroBitacoraOt>
                 {
                     new()
                     {
-                        ArticuloId = canoTermo.Id,
-                        OrdenTrabajoId = ot4.IdOt,
-                        Cantidad = 0.25m, // 1 metro de tira de 4m
-                        FechaHora = ot4.CreatedAt.AddHours(2),
-                        UsuarioId = adminUser?.Id ?? 1,
-                        Observacion = "Tramo para reparación bajo mesada"
+                        Id = Guid.NewGuid(),
+                        OrdenTrabajoId = ot1.Id,
+                        TipoOperacion = "CREACION",
+                        DetalleCambio = "Alta de OT registrada en sistema.",
+                        FechaHora = ot1.CreatedAt
                     },
                     new()
                     {
-                        ArticuloId = teflon.Id,
-                        OrdenTrabajoId = ot4.IdOt,
-                        Cantidad = 1m,
-                        FechaHora = ot4.CreatedAt.AddHours(2),
-                        UsuarioId = adminUser?.Id ?? 1,
-                        Observacion = "Sellado de uniones"
+                        Id = Guid.NewGuid(),
+                        OrdenTrabajoId = ot2.Id,
+                        TipoOperacion = "CREACION",
+                        DetalleCambio = "Alta de OT registrada en sistema.",
+                        FechaHora = ot2.CreatedAt
+                    },
+                    new()
+                    {
+                        Id = Guid.NewGuid(),
+                        OrdenTrabajoId = ot2.Id,
+                        TipoOperacion = "CAMBIO_ESTADO",
+                        DetalleCambio = "Cambio de estado de 'Pendiente' a 'En Proceso'.",
+                        FechaHora = ot2.UpdatedAt
+                    },
+                    new()
+                    {
+                        Id = Guid.NewGuid(),
+                        OrdenTrabajoId = ot3.Id,
+                        TipoOperacion = "CREACION",
+                        DetalleCambio = "Alta de OT registrada en sistema.",
+                        FechaHora = ot3.CreatedAt
+                    },
+                    new()
+                    {
+                        Id = Guid.NewGuid(),
+                        OrdenTrabajoId = ot4.Id,
+                        TipoOperacion = "CREACION",
+                        DetalleCambio = "Alta de OT registrada en sistema.",
+                        FechaHora = ot4.CreatedAt
+                    },
+                    new()
+                    {
+                        Id = Guid.NewGuid(),
+                        OrdenTrabajoId = ot4.Id,
+                        TipoOperacion = "CAMBIO_ESTADO",
+                        DetalleCambio = "Cambio de estado a 'Finalizado'. Solución registrada.",
+                        FechaHora = ot4.UpdatedAt
                     }
                 };
 
-                await context.EgresosConsumo.AddRangeAsync(egresos);
-            }
+                await context.BitacoraOt.AddRangeAsync(bitacoras);
 
-            await context.SaveChangesAsync();
+                // Egresos consumidos vinculados a OT 4
+                var canoTermo = await context.Articulos.FirstOrDefaultAsync(a => a.Nombre.Contains("Termofusión"));
+                var teflon = await context.Articulos.FirstOrDefaultAsync(a => a.Nombre.Contains("Teflón"));
+
+                if (canoTermo != null && teflon != null)
+                {
+                    var egresos = new List<EgresoConsumo>
+                    {
+                        new()
+                        {
+                            ArticuloId = canoTermo.Id,
+                            OrdenTrabajoId = ot4.Id,
+                            Cantidad = 0.25m, // 1 metro de tira de 4m
+                            FechaHora = ot4.CreatedAt.AddHours(2),
+                            UsuarioId = adminUser?.Id ?? 1,
+                            Observacion = "Tramo para reparación bajo mesada"
+                        },
+                        new()
+                        {
+                            ArticuloId = teflon.Id,
+                            OrdenTrabajoId = ot4.Id,
+                            Cantidad = 1m,
+                            FechaHora = ot4.CreatedAt.AddHours(2),
+                            UsuarioId = adminUser?.Id ?? 1,
+                            Observacion = "Sellado de uniones"
+                        }
+                    };
+
+                    await context.EgresosConsumo.AddRangeAsync(egresos);
+                }
+
+                await context.SaveChangesAsync();
+            }
         }
     }
 }

@@ -13,7 +13,7 @@ public class EgresoConsumo
     public Articulo? Articulo { get; set; }
 
     [Column("orden_trabajo_id")]
-    public long OrdenTrabajoId { get; set; }
+    public Guid OrdenTrabajoId { get; set; }
     public OrdenTrabajo? OrdenTrabajo { get; set; }
 
     [Column("cantidad")]

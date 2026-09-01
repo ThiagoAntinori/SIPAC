@@ -26,6 +26,22 @@ public class SipacDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        // Mapeo explícito de tablas
+        modelBuilder.Entity<UnidadFuncional>().ToTable("unidades_funcionales");
+        modelBuilder.Entity<Responsable>().ToTable("responsables");
+        modelBuilder.Entity<CategoriaTrabajo>().ToTable("categorias_trabajo");
+        modelBuilder.Entity<OrdenTrabajo>().ToTable("ordenes_trabajo");
+        modelBuilder.Entity<RegistroBitacoraOt>().ToTable("bitacora_logs");
+        modelBuilder.Entity<Categoria>().ToTable("categorias_articulo");
+        modelBuilder.Entity<Articulo>().ToTable("articulos");
+        modelBuilder.Entity<Compra>().ToTable("compras");
+        modelBuilder.Entity<DetalleCompra>().ToTable("detalle_compras");
+        modelBuilder.Entity<EgresoConsumo>().ToTable("egresos_consumo");
+        modelBuilder.Entity<AjusteInventario>().ToTable("ajustes_inventario");
+        modelBuilder.Entity<Usuario>().ToTable("usuarios");
+        modelBuilder.Entity<AuditLog>().ToTable("audit_logs");
+        modelBuilder.Entity<Empleado>().ToTable("empleados");
+
         // Articulo
         modelBuilder.Entity<Articulo>()
             .Property(a => a.StockActual)
@@ -53,9 +69,6 @@ public class SipacDbContext : DbContext
         modelBuilder.Entity<UnidadFuncional>()
             .HasKey(u => u.Id);
         modelBuilder.Entity<UnidadFuncional>()
-            .Property(u => u.Id)
-            .ValueGeneratedNever();
-        modelBuilder.Entity<UnidadFuncional>()
             .HasIndex(u => new { u.SectorEscalera, u.Piso, u.Depto });
 
         // Responsable
@@ -68,7 +81,7 @@ public class SipacDbContext : DbContext
 
         // OrdenTrabajo
         modelBuilder.Entity<OrdenTrabajo>()
-            .HasKey(o => o.IdOt);
+            .HasKey(o => o.Id);
 
         modelBuilder.Entity<OrdenTrabajo>()
             .HasQueryFilter(o => o.DeletedAt == null);
@@ -131,6 +144,12 @@ public class SipacDbContext : DbContext
             .WithMany(a => a.Egresos)
             .HasForeignKey(e => e.ArticuloId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<EgresoConsumo>()
+            .HasOne(e => e.OrdenTrabajo)
+            .WithMany(o => o.Egresos)
+            .HasForeignKey(e => e.OrdenTrabajoId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Compra>()
             .HasOne(c => c.Usuario)

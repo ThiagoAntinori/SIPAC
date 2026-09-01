@@ -22,7 +22,7 @@ export const SalidasPage: React.FC = () => {
 
   // Form states
   const [articuloId, setArticuloId] = useState<number>(0);
-  const [ordenTrabajoId, setOrdenTrabajoId] = useState<number>(0);
+  const [ordenTrabajoId, setOrdenTrabajoId] = useState<string>('');
   const [cantidad, setCantidad] = useState<number>(1);
   const [observacion, setObservacion] = useState('');
 
@@ -73,7 +73,7 @@ export const SalidasPage: React.FC = () => {
 
   const openModal = () => {
     setArticuloId(articulos[0]?.id || 0);
-    setOrdenTrabajoId(ordenesDisponibles[0]?.idOt || 0);
+    setOrdenTrabajoId(ordenesDisponibles[0]?.idOt || '');
     setCantidad(1);
     setObservacion('');
     setModalOpen(true);
@@ -240,11 +240,11 @@ export const SalidasPage: React.FC = () => {
                 </label>
                 <select
                   value={ordenTrabajoId}
-                  onChange={(e) => setOrdenTrabajoId(Number(e.target.value))}
+                  onChange={(e) => setOrdenTrabajoId(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
                   required
                 >
-                  <option value={0} disabled>
+                  <option value="" disabled>
                     Seleccione una OT activa...
                   </option>
                   {ordenesDisponibles.map((o) => (

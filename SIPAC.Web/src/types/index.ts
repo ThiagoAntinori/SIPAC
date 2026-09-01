@@ -40,19 +40,19 @@ export interface Empleado {
 }
 
 export interface Responsable {
-  id: number;
+  id: string;
   nombre: string;
   activo: boolean;
 }
 
 export interface CategoriaTrabajo {
-  id: number;
+  id: string;
   nombre: string;
   activo: boolean;
 }
 
 export interface UnidadFuncional {
-  id: number;
+  id: string;
   sectorEscalera: string;
   piso?: string | null;
   depto?: string | null;
@@ -72,23 +72,23 @@ export interface OtEgresoItem {
 }
 
 export interface OtBitacoraItem {
-  id: number;
-  tipoOperacion: 'ALTA' | 'MODIFICACION' | 'CAMBIO_ESTADO' | 'BAJA_FISICA' | 'BAJA_LOGICA' | string;
+  id: string;
+  tipoOperacion: 'CREACION' | 'CAMBIO_ESTADO' | 'ACTUALIZACION' | 'BAJA_LOGICA' | string;
   detalleCambio: string;
   fechaHora: string;
 }
 
 export interface OrdenTrabajo {
-  idOt: number;
+  idOt: string;
   numeroOT: string;
-  unidadFuncionalId: number;
+  unidadFuncionalId: string;
   unidadFuncionalDisplay: string;
   sectorEscalera: string;
   piso?: string | null;
   depto?: string | null;
-  responsableId: number;
+  responsableId: string;
   responsableNombre: string;
-  categoriaId: number;
+  categoriaId: string;
   categoriaNombre: string;
   problemaReportado: string;
   solucionRealizada?: string | null;
@@ -103,7 +103,7 @@ export interface OrdenTrabajo {
 }
 
 export interface HistorialOtItem {
-  idOt: number;
+  idOt: string;
   numeroOT: string;
   categoriaNombre: string;
   responsableNombre: string;
@@ -127,7 +127,7 @@ export interface Egreso {
   articuloId: number;
   articuloNombre: string;
   unidadMedida: string;
-  ordenTrabajoId: number;
+  ordenTrabajoId: string;
   numeroOT: string;
   unidadFuncionalDisplay: string;
   empleadoNombre: string;
@@ -189,7 +189,7 @@ export interface AuditLog {
   usuarioNombre: string;
   accion: string;
   model: string;
-  modelId?: number;
+  modelId?: string | number;
   valoresAnteriores?: string;
   valoresNuevos?: string;
   ip?: string;

@@ -40,8 +40,8 @@ export const OrdenesPage: React.FC = () => {
   // Filters
   const [search, setSearch] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('');
-  const [rubroFilter, setRubroFilter] = useState<number | ''>('');
-  const [responsableFilter, setResponsableFilter] = useState<number | ''>('');
+  const [rubroFilter, setRubroFilter] = useState<string>('');
+  const [responsableFilter, setResponsableFilter] = useState<string>('');
   const [soloAlertas, setSoloAlertas] = useState(false);
 
   // Modals
@@ -53,21 +53,21 @@ export const OrdenesPage: React.FC = () => {
 
   // Active OT for Edit / Detail / Delete
   const [selectedOt, setSelectedOt] = useState<OrdenTrabajo | null>(null);
-  const [selectedUfIdForHistorial, setSelectedUfIdForHistorial] = useState<number | null>(null);
+  const [selectedUfIdForHistorial, setSelectedUfIdForHistorial] = useState<string | null>(null);
 
   // Quick Create Cascading State
   const [sectorSelected, setSectorSelected] = useState<string>('');
   const [pisoSelected, setPisoSelected] = useState<string>('');
   const [deptoSelected, setDeptoSelected] = useState<string>('');
-  const [ufFinalId, setUfFinalId] = useState<number | null>(null);
-  const [createResponsableId, setCreateResponsableId] = useState<number>(0);
-  const [createCategoriaId, setCreateCategoriaId] = useState<number>(0);
+  const [ufFinalId, setUfFinalId] = useState<string | null>(null);
+  const [createResponsableId, setCreateResponsableId] = useState<string>('');
+  const [createCategoriaId, setCreateCategoriaId] = useState<string>('');
   const [createProblema, setCreateProblema] = useState('');
   const [createObservaciones, setCreateObservaciones] = useState('');
 
   // Edit OT State
-  const [editResponsableId, setEditResponsableId] = useState<number>(0);
-  const [editCategoriaId, setEditCategoriaId] = useState<number>(0);
+  const [editResponsableId, setEditResponsableId] = useState<string>('');
+  const [editCategoriaId, setEditCategoriaId] = useState<string>('');
   const [editProblema, setEditProblema] = useState('');
   const [editSolucion, setEditSolucion] = useState('');
   const [editEstado, setEditEstado] = useState<string>('Pendiente');
@@ -84,8 +84,8 @@ export const OrdenesPage: React.FC = () => {
     queryFn: () =>
       ordenesApi.getAll({
         estado: estadoFilter || undefined,
-        categoriaId: rubroFilter ? Number(rubroFilter) : undefined,
-        responsableId: responsableFilter ? Number(responsableFilter) : undefined,
+        categoriaId: rubroFilter || undefined,
+        responsableId: responsableFilter || undefined,
         soloAlertas: soloAlertas || undefined,
         search: search || undefined,
       }),
@@ -171,7 +171,7 @@ export const OrdenesPage: React.FC = () => {
   });
 
   const changeEstadoMutation = useMutation({
-    mutationFn: ({ id, estado, solucion }: { id: number; estado: string; solucion?: string }) =>
+    mutationFn: ({ id, estado, solucion }: { id: string; estado: string; solucion?: string }) =>
       ordenesApi.changeEstado(id, { estado, solucionRealizada: solucion }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ordenes'] });
@@ -185,7 +185,7 @@ export const OrdenesPage: React.FC = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => ordenesApi.delete(id),
+    mutationFn: (id: string) => ordenesApi.delete(id),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['ordenes'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardResumen'] });
@@ -207,8 +207,8 @@ export const OrdenesPage: React.FC = () => {
     setPisoSelected('');
     setDeptoSelected('');
     setUfFinalId(null);
-    setCreateResponsableId(responsables[0]?.id || 0);
-    setCreateCategoriaId(rubros[0]?.id || 0);
+    setCreateResponsableId(responsables[0]?.id || '');
+    setCreateCategoriaId(rubros[0]?.id || '');
     setCreateProblema('');
     setCreateObservaciones('');
     setCreateModalOpen(true);
@@ -281,7 +281,7 @@ export const OrdenesPage: React.FC = () => {
     updateMutation.mutate();
   };
 
-  const openHistorialModal = (ufId: number) => {
+  const openHistorialModal = (ufId: string) => {
     setSelectedUfIdForHistorial(ufId);
     setHistorialModalOpen(true);
   };
@@ -451,7 +451,7 @@ export const OrdenesPage: React.FC = () => {
           {/* Rubro Selector */}
           <select
             value={rubroFilter}
-            onChange={(e) => setRubroFilter(e.target.value ? Number(e.target.value) : '')}
+            onChange={(e) => setRubroFilter(e.target.value)}
             className="w-full md:w-48 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500"
           >
             <option value="">Todos los Rubros</option>
@@ -465,7 +465,7 @@ export const OrdenesPage: React.FC = () => {
           {/* Responsable Selector */}
           <select
             value={responsableFilter}
-            onChange={(e) => setResponsableFilter(e.target.value ? Number(e.target.value) : '')}
+            onChange={(e) => setResponsableFilter(e.target.value)}
             className="w-full md:w-48 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500"
           >
             <option value="">Todos los Responsables</option>
@@ -797,11 +797,11 @@ export const OrdenesPage: React.FC = () => {
                   <label className="block text-slate-300 font-semibold mb-1">Rubro / Categoría *</label>
                   <select
                     value={createCategoriaId}
-                    onChange={(e) => setCreateCategoriaId(Number(e.target.value))}
+                    onChange={(e) => setCreateCategoriaId(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500"
                     required
                   >
-                    <option value={0} disabled>
+                    <option value="" disabled>
                       Seleccione rubro...
                     </option>
                     {rubros.map((r) => (
@@ -816,11 +816,11 @@ export const OrdenesPage: React.FC = () => {
                   <label className="block text-slate-300 font-semibold mb-1">Responsable Asignado *</label>
                   <select
                     value={createResponsableId}
-                    onChange={(e) => setCreateResponsableId(Number(e.target.value))}
+                    onChange={(e) => setCreateResponsableId(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500"
                     required
                   >
-                    <option value={0} disabled>
+                    <option value="" disabled>
                       Seleccione responsable...
                     </option>
                     {responsables.map((resp) => (
@@ -916,7 +916,7 @@ export const OrdenesPage: React.FC = () => {
                   <label className="block text-slate-300 font-semibold mb-1">Rubro / Categoría *</label>
                   <select
                     value={editCategoriaId}
-                    onChange={(e) => setEditCategoriaId(Number(e.target.value))}
+                    onChange={(e) => setEditCategoriaId(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500"
                     required
                   >
@@ -932,7 +932,7 @@ export const OrdenesPage: React.FC = () => {
                   <label className="block text-slate-300 font-semibold mb-1">Responsable Asignado *</label>
                   <select
                     value={editResponsableId}
-                    onChange={(e) => setEditResponsableId(Number(e.target.value))}
+                    onChange={(e) => setEditResponsableId(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500"
                     required
                   >

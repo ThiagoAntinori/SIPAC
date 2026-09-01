@@ -71,10 +71,7 @@ public class AuditInterceptor : SaveChangesInterceptor
             var primaryKey = entry.Properties.FirstOrDefault(p => p.Metadata.IsPrimaryKey());
             if (primaryKey?.CurrentValue != null)
             {
-                if (long.TryParse(primaryKey.CurrentValue.ToString(), out var modelId))
-                {
-                    audit.ModelId = modelId;
-                }
+                audit.ModelId = primaryKey.CurrentValue.ToString();
             }
 
             context.Set<AuditLog>().Add(audit);

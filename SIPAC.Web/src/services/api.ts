@@ -77,14 +77,14 @@ export const responsablesApi = {
   getAll: (params?: { soloActivos?: boolean }) =>
     api.get<Responsable[]>('/responsables', { params }).then((r) => r.data),
   create: (data: { nombre: string }) => api.post<Responsable>('/responsables', data).then((r) => r.data),
-  update: (id: number, data: { nombre: string; activo: boolean }) => api.put(`/responsables/${id}`, data).then((r) => r.data),
+  update: (id: string, data: { nombre: string; activo: boolean }) => api.put(`/responsables/${id}`, data).then((r) => r.data),
 };
 
 export const categoriasTrabajoApi = {
   getAll: (params?: { soloActivas?: boolean }) =>
     api.get<CategoriaTrabajo[]>('/categoriastrabajo', { params }).then((r) => r.data),
   create: (data: { nombre: string }) => api.post<CategoriaTrabajo>('/categoriastrabajo', data).then((r) => r.data),
-  update: (id: number, data: { nombre: string; activo: boolean }) => api.put(`/categoriastrabajo/${id}`, data).then((r) => r.data),
+  update: (id: string, data: { nombre: string; activo: boolean }) => api.put(`/categoriastrabajo/${id}`, data).then((r) => r.data),
 };
 
 export const unidadesFuncionalesApi = {
@@ -95,49 +95,49 @@ export const unidadesFuncionalesApi = {
     api.get<string[]>('/unidadesfuncionales/pisos', { params: { sector } }).then((r) => r.data),
   getDeptos: (sector: string, piso?: string) =>
     api.get<UnidadFuncional[]>('/unidadesfuncionales/deptos', { params: { sector, piso } }).then((r) => r.data),
-  getById: (id: number) => api.get<UnidadFuncional>(`/unidadesfuncionales/${id}`).then((r) => r.data),
-  getHistorial: (id: number) =>
+  getById: (id: string) => api.get<UnidadFuncional>(`/unidadesfuncionales/${id}`).then((r) => r.data),
+  getHistorial: (id: string) =>
     api.get<HistorialUfResponse>(`/unidadesfuncionales/${id}/historial`).then((r) => r.data),
 };
 
 export const ordenesApi = {
   getAll: (params?: {
     estado?: string;
-    responsableId?: number;
-    categoriaId?: number;
-    unidadFuncionalId?: number;
+    responsableId?: string;
+    categoriaId?: string;
+    unidadFuncionalId?: string;
     soloAlertas?: boolean;
     search?: string;
   }) => api.get<OrdenTrabajo[]>('/ordenestrabajo', { params }).then((r) => r.data),
-  getById: (id: number) => api.get<OrdenTrabajo>(`/ordenestrabajo/${id}`).then((r) => r.data),
+  getById: (id: string) => api.get<OrdenTrabajo>(`/ordenestrabajo/${id}`).then((r) => r.data),
   create: (data: {
-    unidadFuncionalId: number;
-    responsableId: number;
-    categoriaId: number;
+    unidadFuncionalId: string;
+    responsableId: string;
+    categoriaId: string;
     problemaReportado: string;
     observaciones?: string;
   }) => api.post<OrdenTrabajo>('/ordenestrabajo', data).then((r) => r.data),
   update: (
-    id: number,
+    id: string,
     data: {
-      responsableId: number;
-      categoriaId: number;
+      responsableId: string;
+      categoriaId: string;
       problemaReportado: string;
       solucionRealizada?: string;
       estado: string;
       observaciones?: string;
     }
   ) => api.put<OrdenTrabajo>(`/ordenestrabajo/${id}`, data).then((r) => r.data),
-  changeEstado: (id: number, data: { estado: string; solucionRealizada?: string; observaciones?: string }) =>
+  changeEstado: (id: string, data: { estado: string; solucionRealizada?: string; observaciones?: string }) =>
     api.patch(`/ordenestrabajo/${id}/estado`, data).then((r) => r.data),
-  delete: (id: number) =>
+  delete: (id: string) =>
     api.delete<{ message: string; tipoBaja: string }>(`/ordenestrabajo/${id}`).then((r) => r.data),
 };
 
 export const egresosApi = {
-  getAll: (params?: { articuloId?: number; ordenTrabajoId?: number; desde?: string; hasta?: string }) =>
+  getAll: (params?: { articuloId?: number; ordenTrabajoId?: string; desde?: string; hasta?: string }) =>
     api.get<Egreso[]>('/egresos', { params }).then((r) => r.data),
-  create: (data: { articuloId: number; ordenTrabajoId: number; cantidad: number; observacion?: string }) =>
+  create: (data: { articuloId: number; ordenTrabajoId: string; cantidad: number; observacion?: string }) =>
     api.post<Egreso>('/egresos', data).then((r) => r.data),
 };
 

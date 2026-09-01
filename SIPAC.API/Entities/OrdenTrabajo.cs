@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SIPAC.API.Entities;
@@ -5,19 +6,23 @@ namespace SIPAC.API.Entities;
 [Table("ordenes_trabajo")]
 public class OrdenTrabajo
 {
-    [Column("id_ot")]
-    public long IdOt { get; set; }
+    [Key]
+    [Column("id")]
+    public Guid Id { get; set; } = Guid.NewGuid();
+
+    [NotMapped]
+    public Guid IdOt => Id;
 
     [Column("unidad_funcional_id")]
-    public long UnidadFuncionalId { get; set; }
+    public Guid UnidadFuncionalId { get; set; }
     public UnidadFuncional? UnidadFuncional { get; set; }
 
     [Column("responsable_id")]
-    public long ResponsableId { get; set; }
+    public Guid ResponsableId { get; set; }
     public Responsable? Responsable { get; set; }
 
     [Column("categoria_id")]
-    public long CategoriaId { get; set; }
+    public Guid CategoriaId { get; set; }
     public CategoriaTrabajo? Categoria { get; set; }
 
     [Column("problema_reportado")]
@@ -42,7 +47,7 @@ public class OrdenTrabajo
     public DateTime? DeletedAt { get; set; }
 
     [NotMapped]
-    public string NumeroOT => $"OT-{CreatedAt.Year}-{IdOt:D4}";
+    public string NumeroOT => $"OT-{CreatedAt.Year}-{Id.ToString()[..8].ToUpper()}";
 
     [NotMapped]
     public bool EsAlertaInactividad =>
