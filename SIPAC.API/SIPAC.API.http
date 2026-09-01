@@ -1,0 +1,6 @@
+@SIPAC.API_HostAddress = http://localhost:5252
+
+GET {{SIPAC.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

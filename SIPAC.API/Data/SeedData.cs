@@ -1,0 +1,429 @@
+using Microsoft.EntityFrameworkCore;
+using SIPAC.API.Entities;
+using SIPAC.API.Services;
+
+namespace SIPAC.API.Data;
+
+public static class SeedData
+{
+    public static async Task InitializeAsync(IServiceProvider serviceProvider)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<SipacDbContext>();
+        var authService = scope.ServiceProvider.GetRequiredService<AuthService>();
+
+        await context.Database.MigrateAsync();
+
+        // ── 1. Seed Categorías de Pañol / Artículos ──────────────────────────────
+        if (!await context.Categorias.AnyAsync())
+        {
+            var categorias = new List<Categoria>
+            {
+                new() { Nombre = "Herramientas Manuales" },
+                new() { Nombre = "Herramientas Eléctricas" },
+                new() { Nombre = "Electricidad e Iluminación" },
+                new() { Nombre = "Plomería y Gas" },
+                new() { Nombre = "Ferretería y Tornillería" },
+                new() { Nombre = "Pinturas y Adhesivos" },
+                new() { Nombre = "Seguridad e Higiene (EPP)" },
+                new() { Nombre = "Limpieza y Mantenimiento" }
+            };
+            await context.Categorias.AddRangeAsync(categorias);
+            await context.SaveChangesAsync();
+        }
+
+        // ── 2. Seed Usuarios ──────────────────────────────────────────────────────
+        if (!await context.Usuarios.AnyAsync())
+        {
+            var adminUser = new Usuario
+            {
+                NombreCompleto = "Administrador del Sistema",
+                Username = "admin",
+                PasswordHash = authService.HashPassword("Admin123!"),
+                Rol = "Admin",
+                Activo = true
+            };
+
+            var panoleroUser = new Usuario
+            {
+                NombreCompleto = "Martín Pañolero",
+                Username = "panolero",
+                PasswordHash = authService.HashPassword("Panol123!"),
+                Rol = "Pañolero",
+                Activo = true
+            };
+
+            await context.Usuarios.AddRangeAsync(adminUser, panoleroUser);
+            await context.SaveChangesAsync();
+        }
+
+        // ── 3. Seed Responsables (BASI Fix) ───────────────────────────────────────
+        if (!await context.Responsables.AnyAsync())
+        {
+            var responsables = new List<Responsable>
+            {
+                new() { Nombre = "Juan Pérez", Activo = true },
+                new() { Nombre = "Carlos Rodríguez", Activo = true },
+                new() { Nombre = "Marcos Gómez", Activo = true },
+                new() { Nombre = "Lucía Fernández", Activo = true },
+                new() { Nombre = "Roberto Sánchez", Activo = true },
+                new() { Nombre = "Diego Martínez", Activo = true }
+            };
+            await context.Responsables.AddRangeAsync(responsables);
+            await context.SaveChangesAsync();
+        }
+
+        // ── 4. Seed Empleados (Compatibilidad previa) ────────────────────────────
+        if (!await context.Empleados.AnyAsync())
+        {
+            var empleados = new List<Empleado>
+            {
+                new() { NombreCompleto = "Juan Pérez", Legajo = "LEG-1001", PuestoSector = "Mantenimiento General", Activo = true },
+                new() { NombreCompleto = "Carlos Rodríguez", Legajo = "LEG-1002", PuestoSector = "Electricidad y Tableros", Activo = true },
+                new() { NombreCompleto = "Marcos Gómez", Legajo = "LEG-1003", PuestoSector = "Plomería y Calderas", Activo = true },
+                new() { NombreCompleto = "Lucía Fernández", Legajo = "LEG-1004", PuestoSector = "Pintura y Albañilería", Activo = true }
+            };
+            await context.Empleados.AddRangeAsync(empleados);
+            await context.SaveChangesAsync();
+        }
+
+        // ── 5. Seed Categorías de Trabajo / Rubros (BASI Fix) ─────────────────────
+        if (!await context.CategoriasTrabajo.AnyAsync())
+        {
+            var rubros = new List<CategoriaTrabajo>
+            {
+                new() { Nombre = "Plomería", Activo = true },
+                new() { Nombre = "Electricidad", Activo = true },
+                new() { Nombre = "Iluminación Común", Activo = true },
+                new() { Nombre = "Mantenimiento Edilicio", Activo = true },
+                new() { Nombre = "Espacios Verdes", Activo = true },
+                new() { Nombre = "Cerrajería", Activo = true },
+                new() { Nombre = "Gas y Calefacción", Activo = true },
+                new() { Nombre = "Limpieza y Desinfección", Activo = true }
+            };
+            await context.CategoriasTrabajo.AddRangeAsync(rubros);
+            await context.SaveChangesAsync();
+        }
+
+        // ── 6. Seed Catálogo Maestro de Unidades Funcionales ─────────────────────
+        if (!await context.UnidadesFuncionales.AnyAsync())
+        {
+            var ufs = new List<UnidadFuncional>();
+            long nextId = 1;
+
+            // Sectores Residenciales Estándar (28, 45, 116, 120)
+            var sectores = new[] { "28", "45", "116", "120" };
+            var pisos = new[] { "PB", "1", "2", "3", "4" };
+            var deptos = new[] { "A", "B", "C", "D" };
+
+            foreach (var sec in sectores)
+            {
+                foreach (var piso in pisos)
+                {
+                    foreach (var depto in deptos)
+                    {
+                        ufs.Add(new UnidadFuncional
+                        {
+                            Id = nextId++,
+                            SectorEscalera = sec,
+                            Piso = piso,
+                            Depto = depto
+                        });
+                    }
+                }
+            }
+
+            // Torres en Altura (Torre A y Torre B, Pisos PB a 10, Deptos 1 a 4)
+            var torres = new[] { "Torre A", "Torre B" };
+            var pisosTorre = new[] { "PB", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
+            var deptosTorre = new[] { "1", "2", "3", "4" };
+
+            foreach (var torre in torres)
+            {
+                foreach (var piso in pisosTorre)
+                {
+                    foreach (var depto in deptosTorre)
+                    {
+                        ufs.Add(new UnidadFuncional
+                        {
+                            Id = nextId++,
+                            SectorEscalera = torre,
+                            Piso = piso,
+                            Depto = depto
+                        });
+                    }
+                }
+            }
+
+            // Locales Comerciales (Sector = 'LOCAL', Piso = '1'...'15', Depto = null)
+            for (int i = 1; i <= 15; i++)
+            {
+                ufs.Add(new UnidadFuncional
+                {
+                    Id = 1400 + i, // IDs históricos 1401 - 1415
+                    SectorEscalera = "LOCAL",
+                    Piso = i.ToString(),
+                    Depto = null
+                });
+            }
+
+            await context.UnidadesFuncionales.AddRangeAsync(ufs);
+            await context.SaveChangesAsync();
+        }
+
+        // ── 7. Seed Artículos de Pañol ───────────────────────────────────────────
+        if (!await context.Articulos.AnyAsync())
+        {
+            var catElectricidad = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre.Contains("Electricidad"));
+            var catFerreteria = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre.Contains("Ferretería"));
+            var catEPP = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre.Contains("Seguridad"));
+            var catHerramientas = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre.Contains("Manuales"));
+            var catPlomeria = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre.Contains("Plomería"));
+
+            var articulos = new List<Articulo>
+            {
+                new()
+                {
+                    Nombre = "Cinta Aisladora 3M 20m",
+                    CategoriaId = catElectricidad?.Id ?? 1,
+                    UnidadMedida = "Rollo",
+                    EsFraccionable = false,
+                    StockActual = 15,
+                    StockMinimo = 5,
+                    Activo = true
+                },
+                new()
+                {
+                    Nombre = "Lámpara LED 12W E27 Fría",
+                    CategoriaId = catElectricidad?.Id ?? 1,
+                    UnidadMedida = "Unidad",
+                    EsFraccionable = false,
+                    StockActual = 4, // Alerta stock bajo
+                    StockMinimo = 10,
+                    Activo = true
+                },
+                new()
+                {
+                    Nombre = "Tornillo Autoperforante 1 1/2 pulg",
+                    CategoriaId = catFerreteria?.Id ?? 1,
+                    UnidadMedida = "Unidad",
+                    EsFraccionable = true,
+                    StockActual = 120,
+                    StockMinimo = 50,
+                    Activo = true
+                },
+                new()
+                {
+                    Nombre = "Guantes de Nitrilo Talle L",
+                    CategoriaId = catEPP?.Id ?? 1,
+                    UnidadMedida = "Par",
+                    EsFraccionable = false,
+                    StockActual = 3, // Alerta stock bajo
+                    StockMinimo = 8,
+                    Activo = true
+                },
+                new()
+                {
+                    Nombre = "Llave Francesa 10 pulg",
+                    CategoriaId = catHerramientas?.Id ?? 1,
+                    UnidadMedida = "Unidad",
+                    EsFraccionable = false,
+                    StockActual = 4,
+                    StockMinimo = 2,
+                    Activo = true
+                },
+                new()
+                {
+                    Nombre = "Caño Termofusión 20mm x 4m",
+                    CategoriaId = catPlomeria?.Id ?? 1,
+                    UnidadMedida = "Tira",
+                    EsFraccionable = true,
+                    StockActual = 8,
+                    StockMinimo = 4,
+                    Activo = true
+                },
+                new()
+                {
+                    Nombre = "Toma Doble Jeluz Verona",
+                    CategoriaId = catElectricidad?.Id ?? 1,
+                    UnidadMedida = "Unidad",
+                    EsFraccionable = false,
+                    StockActual = 12,
+                    StockMinimo = 4,
+                    Activo = true
+                },
+                new()
+                {
+                    Nombre = "Teflón Alta Densidad 3/4 pulg",
+                    CategoriaId = catPlomeria?.Id ?? 1,
+                    UnidadMedida = "Rollo",
+                    EsFraccionable = false,
+                    StockActual = 20,
+                    StockMinimo = 6,
+                    Activo = true
+                }
+            };
+
+            await context.Articulos.AddRangeAsync(articulos);
+            await context.SaveChangesAsync();
+        }
+
+        // ── 8. Seed Órdenes de Trabajo (BASI Fix) y Auditoría ─────────────────────
+        if (!await context.OrdenesTrabajo.AnyAsync())
+        {
+            var resp1 = await context.Responsables.FirstOrDefaultAsync(r => r.Nombre.Contains("Juan Pérez"));
+            var resp2 = await context.Responsables.FirstOrDefaultAsync(r => r.Nombre.Contains("Carlos Rodríguez"));
+            var resp3 = await context.Responsables.FirstOrDefaultAsync(r => r.Nombre.Contains("Lucía Fernández"));
+
+            var catPlomeria = await context.CategoriasTrabajo.FirstOrDefaultAsync(c => c.Nombre.Contains("Plomería"));
+            var catElectricidad = await context.CategoriasTrabajo.FirstOrDefaultAsync(c => c.Nombre.Contains("Electricidad"));
+            var catIluminacion = await context.CategoriasTrabajo.FirstOrDefaultAsync(c => c.Nombre.Contains("Iluminación"));
+            var catMantenimiento = await context.CategoriasTrabajo.FirstOrDefaultAsync(c => c.Nombre.Contains("Mantenimiento"));
+
+            var ufDepto1 = await context.UnidadesFuncionales.FirstOrDefaultAsync(u => u.SectorEscalera == "28" && u.Piso == "2" && u.Depto == "B");
+            var ufLocal3 = await context.UnidadesFuncionales.FirstOrDefaultAsync(u => u.SectorEscalera == "LOCAL" && u.Piso == "3");
+            var ufTorre = await context.UnidadesFuncionales.FirstOrDefaultAsync(u => u.SectorEscalera == "Torre A" && u.Piso == "4" && u.Depto == "2");
+            var ufAlerta = await context.UnidadesFuncionales.FirstOrDefaultAsync(u => u.SectorEscalera == "45" && u.Piso == "1" && u.Depto == "A");
+
+            var adminUser = await context.Usuarios.FirstOrDefaultAsync(u => u.Username == "admin");
+
+            // OT 1: ALERTA +5 DÍAS PENDIENTE (Creada hace 7 días)
+            var ot1 = new OrdenTrabajo
+            {
+                UnidadFuncionalId = ufAlerta?.Id ?? 1,
+                ResponsableId = resp1?.Id ?? 1,
+                CategoriaId = catPlomeria?.Id ?? 1,
+                ProblemaReportado = "Pérdida de agua continua en canilla de paso de cocina. Filtración hacia piso inferior.",
+                Estado = "Pendiente",
+                Observaciones = "Reclamo reiterado por propietario. Prioridad urgente.",
+                CreatedAt = DateTime.UtcNow.AddDays(-7),
+                UpdatedAt = DateTime.UtcNow.AddDays(-7)
+            };
+
+            // OT 2: En Proceso (Local 3)
+            var ot2 = new OrdenTrabajo
+            {
+                UnidadFuncionalId = ufLocal3?.Id ?? 1403,
+                ResponsableId = resp2?.Id ?? 2,
+                CategoriaId = catElectricidad?.Id ?? 2,
+                ProblemaReportado = "Disyunción repentina de térmicas de iluminación de marquesina y vidriera.",
+                Estado = "En Proceso",
+                Observaciones = "Revisión de cableado exterior y aislamiento.",
+                CreatedAt = DateTime.UtcNow.AddDays(-2),
+                UpdatedAt = DateTime.UtcNow.AddDays(-1)
+            };
+
+            // OT 3: Pendiente Reciente (<24h)
+            var ot3 = new OrdenTrabajo
+            {
+                UnidadFuncionalId = ufTorre?.Id ?? 2,
+                ResponsableId = resp1?.Id ?? 1,
+                CategoriaId = catIluminacion?.Id ?? 3,
+                ProblemaReportado = "Foco quemado y zócalo flojo en palier central.",
+                Estado = "Pendiente",
+                Observaciones = "Turno mañana.",
+                CreatedAt = DateTime.UtcNow.AddHours(-3),
+                UpdatedAt = DateTime.UtcNow.AddHours(-3)
+            };
+
+            // OT 4: Finalizada con Solución y Consumo de Materiales
+            var ot4 = new OrdenTrabajo
+            {
+                UnidadFuncionalId = ufDepto1?.Id ?? 1,
+                ResponsableId = resp3?.Id ?? 3,
+                CategoriaId = catPlomeria?.Id ?? 1,
+                ProblemaReportado = "Filtración en codo de termofusión bajo mesada.",
+                SolucionRealizada = "Se reemplazó tramo de 1 metro de caño termofusión de 20mm y se colocaron 2 cuplas y teflón de alta densidad. Prueba hidráulica realizada sin pérdidas.",
+                Estado = "Finalizado",
+                Observaciones = "Trabajo terminado con conformidad de morador.",
+                CreatedAt = DateTime.UtcNow.AddDays(-3),
+                UpdatedAt = DateTime.UtcNow.AddDays(-1)
+            };
+
+            await context.OrdenesTrabajo.AddRangeAsync(ot1, ot2, ot3, ot4);
+            await context.SaveChangesAsync();
+
+            // Bitácoras iniciales
+            var bitacoras = new List<RegistroBitacoraOt>
+            {
+                new()
+                {
+                    OrdenTrabajoId = ot1.IdOt,
+                    TipoOperacion = "ALTA",
+                    DetalleCambio = "Alta de OT registrada en sistema.",
+                    FechaHora = ot1.CreatedAt
+                },
+                new()
+                {
+                    OrdenTrabajoId = ot2.IdOt,
+                    TipoOperacion = "ALTA",
+                    DetalleCambio = "Alta de OT registrada en sistema.",
+                    FechaHora = ot2.CreatedAt
+                },
+                new()
+                {
+                    OrdenTrabajoId = ot2.IdOt,
+                    TipoOperacion = "CAMBIO_ESTADO",
+                    DetalleCambio = "Cambio de estado de 'Pendiente' a 'En Proceso'.",
+                    FechaHora = ot2.UpdatedAt
+                },
+                new()
+                {
+                    OrdenTrabajoId = ot3.IdOt,
+                    TipoOperacion = "ALTA",
+                    DetalleCambio = "Alta de OT registrada en sistema.",
+                    FechaHora = ot3.CreatedAt
+                },
+                new()
+                {
+                    OrdenTrabajoId = ot4.IdOt,
+                    TipoOperacion = "ALTA",
+                    DetalleCambio = "Alta de OT registrada en sistema.",
+                    FechaHora = ot4.CreatedAt
+                },
+                new()
+                {
+                    OrdenTrabajoId = ot4.IdOt,
+                    TipoOperacion = "CAMBIO_ESTADO",
+                    DetalleCambio = "Cambio de estado a 'Finalizado'. Solución registrada.",
+                    FechaHora = ot4.UpdatedAt
+                }
+            };
+
+            await context.BitacoraOt.AddRangeAsync(bitacoras);
+
+            // Egresos consumidos vinculados a OT 4
+            var canoTermo = await context.Articulos.FirstOrDefaultAsync(a => a.Nombre.Contains("Termofusión"));
+            var teflon = await context.Articulos.FirstOrDefaultAsync(a => a.Nombre.Contains("Teflón"));
+
+            if (canoTermo != null && teflon != null)
+            {
+                var egresos = new List<EgresoConsumo>
+                {
+                    new()
+                    {
+                        ArticuloId = canoTermo.Id,
+                        OrdenTrabajoId = ot4.IdOt,
+                        Cantidad = 0.25m, // 1 metro de tira de 4m
+                        FechaHora = ot4.CreatedAt.AddHours(2),
+                        UsuarioId = adminUser?.Id ?? 1,
+                        Observacion = "Tramo para reparación bajo mesada"
+                    },
+                    new()
+                    {
+                        ArticuloId = teflon.Id,
+                        OrdenTrabajoId = ot4.IdOt,
+                        Cantidad = 1m,
+                        FechaHora = ot4.CreatedAt.AddHours(2),
+                        UsuarioId = adminUser?.Id ?? 1,
+                        Observacion = "Sellado de uniones"
+                    }
+                };
+
+                await context.EgresosConsumo.AddRangeAsync(egresos);
+            }
+
+            await context.SaveChangesAsync();
+        }
+    }
+}
