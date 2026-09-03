@@ -56,34 +56,31 @@ public class DashboardController : ControllerBase
         var egresosHoy = await _context.EgresosConsumo
             .CountAsync(e => e.FechaHora >= hoy);
 
-        var egresosRecientes = await _context.EgresosConsumo
+        var egresosEntities = await _context.EgresosConsumo
             .Include(e => e.Articulo)
             .Include(e => e.OrdenTrabajo).ThenInclude(o => o!.Responsable)
             .Include(e => e.OrdenTrabajo).ThenInclude(o => o!.UnidadFuncional)
             .Include(e => e.Usuario)
             .OrderByDescending(e => e.FechaHora)
             .Take(5)
-            .Select(e => new EgresoDto
-            {
-                Id = e.Id,
-                ArticuloId = e.ArticuloId,
-                ArticuloNombre = e.Articulo != null ? e.Articulo.Nombre : "",
-                UnidadMedida = e.Articulo != null ? e.Articulo.UnidadMedida : "",
-                OrdenTrabajoId = e.OrdenTrabajoId,
-                NumeroOT = e.OrdenTrabajo != null ? $"OT-{e.OrdenTrabajo.CreatedAt.Year}-{e.OrdenTrabajo.IdOt:D4}" : "",
-                UnidadFuncionalDisplay = e.OrdenTrabajo != null && e.OrdenTrabajo.UnidadFuncional != null
-                    ? (e.OrdenTrabajo.UnidadFuncional.SectorEscalera.ToUpper() == "LOCAL"
-                        ? $"LOCAL Nº {e.OrdenTrabajo.UnidadFuncional.Piso}"
-                        : $"UF {e.OrdenTrabajo.UnidadFuncional.Id} (Sec {e.OrdenTrabajo.UnidadFuncional.SectorEscalera} - {e.OrdenTrabajo.UnidadFuncional.Piso} \"{e.OrdenTrabajo.UnidadFuncional.Depto}\")")
-                    : "",
-                EmpleadoNombre = e.OrdenTrabajo != null && e.OrdenTrabajo.Responsable != null ? e.OrdenTrabajo.Responsable.Nombre : "",
-                Cantidad = e.Cantidad,
-                FechaHora = e.FechaHora,
-                UsuarioId = e.UsuarioId,
-                UsuarioNombre = e.Usuario != null ? e.Usuario.NombreCompleto : "",
-                Observacion = e.Observacion
-            })
             .ToListAsync();
+
+        var egresosRecientes = egresosEntities.Select(e => new EgresoDto
+        {
+            Id = e.Id,
+            ArticuloId = e.ArticuloId,
+            ArticuloNombre = e.Articulo != null ? e.Articulo.Nombre : "",
+            UnidadMedida = e.Articulo != null ? e.Articulo.UnidadMedida : "",
+            OrdenTrabajoId = e.OrdenTrabajoId,
+            NumeroOT = e.OrdenTrabajo != null ? e.OrdenTrabajo.NumeroOT : "",
+            UnidadFuncionalDisplay = e.OrdenTrabajo?.UnidadFuncional?.DisplayNombre ?? "",
+            EmpleadoNombre = e.OrdenTrabajo?.Responsable?.Nombre ?? "",
+            Cantidad = e.Cantidad,
+            FechaHora = e.FechaHora,
+            UsuarioId = e.UsuarioId,
+            UsuarioNombre = e.Usuario != null ? e.Usuario.NombreCompleto : "",
+            Observacion = e.Observacion
+        }).ToList();
 
         var ultimasOrdenesEntities = await _context.OrdenesTrabajo
             .Include(o => o.UnidadFuncional)
@@ -98,13 +95,9 @@ public class DashboardController : ControllerBase
         var ultimasOrdenes = ultimasOrdenesEntities.Select(o => new OtDto
         {
             IdOt = o.IdOt,
-            NumeroOT = $"OT-{o.CreatedAt.Year}-{o.IdOt:D4}",
+            NumeroOT = o.NumeroOT,
             UnidadFuncionalId = o.UnidadFuncionalId,
-            UnidadFuncionalDisplay = o.UnidadFuncional != null
-                ? (o.UnidadFuncional.SectorEscalera.ToUpper() == "LOCAL"
-                    ? $"LOCAL Nº {o.UnidadFuncional.Piso}"
-                    : $"UF {o.UnidadFuncional.Id} (Sec {o.UnidadFuncional.SectorEscalera} - {o.UnidadFuncional.Piso} \"{o.UnidadFuncional.Depto}\")")
-                : "",
+            UnidadFuncionalDisplay = o.UnidadFuncional?.DisplayNombre ?? "",
             SectorEscalera = o.UnidadFuncional?.SectorEscalera ?? "",
             Piso = o.UnidadFuncional?.Piso,
             Depto = o.UnidadFuncional?.Depto,
