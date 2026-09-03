@@ -14,11 +14,35 @@ public static class SeedData
 
         try
         {
-            await context.Database.MigrateAsync();
+            if (context.Database.IsSqlite())
+            {
+                // Para SQLite local, verificar si la base previa tiene el esquema actual
+                bool needsRecreate = false;
+                try
+                {
+                    _ = await context.Categorias.AnyAsync();
+                }
+                catch
+                {
+                    needsRecreate = true;
+                }
+
+                if (needsRecreate)
+                {
+                    Console.WriteLine("[SeedData] Base de datos SQLite local desactualizada detectada. Regenerando esquema limpio...");
+                    await context.Database.EnsureDeletedAsync();
+                }
+
+                await context.Database.EnsureCreatedAsync();
+            }
+            else
+            {
+                await context.Database.MigrateAsync();
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[SeedData] Aviso al verificar migraciones de base de datos: {ex.Message}");
+            Console.WriteLine($"[SeedData] Aviso al verificar inicialización de base de datos: {ex.Message}");
         }
 
         // ── 1. Seed Categorías de Pañol / Artículos ──────────────────────────────
