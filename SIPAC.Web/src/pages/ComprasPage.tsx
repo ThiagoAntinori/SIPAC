@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { comprasApi, articulosApi } from '../services/api';
 import toast from 'react-hot-toast';
-import { ArrowDownLeft, Plus, Trash2, X, Receipt, CheckCircle } from 'lucide-react';
+import { ArrowDownLeft, Plus, Trash2, X, Receipt, CheckCircle, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface ItemRow {
@@ -19,6 +19,7 @@ export const ComprasPage: React.FC = () => {
   const [fechaCompra, setFechaCompra] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [observaciones, setObservaciones] = useState('');
   const [items, setItems] = useState<ItemRow[]>([{ articuloId: 0, cantidadRecibida: 1 }]);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const { data: compras = [], isLoading } = useQuery({
     queryKey: ['compras'],
@@ -43,12 +44,22 @@ export const ComprasPage: React.FC = () => {
     const copy = [...items];
     copy[idx] = { ...copy[idx], [field]: val };
     setItems(copy);
+    setFormError(null);
+  };
+
+  const handleItemKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
+    const item = items[idx];
+    const art = articulos.find((a) => a.id === item.articuloId);
+    if (art && !art.esFraccionable && (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '-')) {
+      e.preventDefault();
+      setFormError(`El artículo '${art.nombre}' no es fraccionable: solo se permiten números enteros.`);
+    }
   };
 
   const createMutation = useMutation({
     mutationFn: async () => {
       const validItems = items.filter((i) => i.articuloId > 0 && i.cantidadRecibida > 0);
-      if (validItems.length === 0) throw new Error('Debe agregar al menos un artículo válido');
+      if (validItems.length === 0) throw new Error('Debe agregar al menos un artículo válido con cantidad mayor a 0');
 
       return comprasApi.create({
         nroComprobante,
@@ -65,7 +76,9 @@ export const ComprasPage: React.FC = () => {
       closeModal();
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || err.message || 'Error al registrar la compra');
+      const msg = err.response?.data?.message || err.message || 'Error al registrar la compra';
+      setFormError(msg);
+      toast.error(msg);
     },
   });
 
@@ -74,19 +87,56 @@ export const ComprasPage: React.FC = () => {
     setFechaCompra(format(new Date(), 'yyyy-MM-dd'));
     setObservaciones('');
     setItems([{ articuloId: articulos[0]?.id || 0, cantidadRecibida: 1 }]);
+    setFormError(null);
     setModalOpen(true);
   };
 
   const closeModal = () => {
     setModalOpen(false);
+    setFormError(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+
     if (!nroComprobante.trim()) {
-      toast.error('El número de comprobante es requerido');
+      const msg = 'El número de comprobante es requerido.';
+      setFormError(msg);
+      toast.error(msg);
       return;
     }
+
+    if (items.length === 0) {
+      const msg = 'Debe incluir al menos un artículo recibido.';
+      setFormError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    for (let i = 0; i < items.length; i++) {
+      const row = items[i];
+      if (!row.articuloId || row.articuloId === 0) {
+        const msg = `Fila #${i + 1}: Debe seleccionar un material o artículo.`;
+        setFormError(msg);
+        toast.error(msg);
+        return;
+      }
+      if (isNaN(row.cantidadRecibida) || row.cantidadRecibida <= 0) {
+        const msg = `Fila #${i + 1}: La cantidad recibida debe ser mayor a 0.`;
+        setFormError(msg);
+        toast.error(msg);
+        return;
+      }
+      const art = articulos.find((a) => a.id === row.articuloId);
+      if (art && !art.esFraccionable && row.cantidadRecibida % 1 !== 0) {
+        const msg = `Fila #${i + 1}: El artículo '${art.nombre}' no es fraccionable: no admite cantidades con decimales. Ingrese un valor entero.`;
+        setFormError(msg);
+        toast.error(msg);
+        return;
+      }
+    }
+
     createMutation.mutate();
   };
 
@@ -169,14 +219,24 @@ export const ComprasPage: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4 text-xs">
+              {formError && (
+                <div className="p-3 bg-red-950/80 border border-red-800/80 rounded-xl text-red-200 text-xs flex items-start space-x-2.5">
+                  <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 font-medium">{formError}</div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">N° Comprobante / Factura / Remito *</label>
                   <input
                     type="text"
                     value={nroComprobante}
-                    onChange={(e) => setNroComprobante(e.target.value)}
+                    onChange={(e) => {
+                      setNroComprobante(e.target.value);
+                      if (formError) setFormError(null);
+                    }}
                     placeholder="Ej. FC-A-0001-0004523"
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500 font-mono"
                     required
@@ -188,7 +248,10 @@ export const ComprasPage: React.FC = () => {
                   <input
                     type="date"
                     value={fechaCompra}
-                    onChange={(e) => setFechaCompra(e.target.value)}
+                    onChange={(e) => {
+                      setFechaCompra(e.target.value);
+                      if (formError) setFormError(null);
+                    }}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500"
                     required
                   />
@@ -210,49 +273,67 @@ export const ComprasPage: React.FC = () => {
                 </div>
 
                 <div className="space-y-2 max-h-48 overflow-y-auto p-1 bg-slate-950/50 rounded-xl border border-slate-800">
-                  {items.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 p-2 bg-slate-900 border border-slate-800 rounded-lg">
-                      <div className="flex-1">
-                        <select
-                          value={item.articuloId}
-                          onChange={(e) => updateItemRow(idx, 'articuloId', Number(e.target.value))}
-                          className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-emerald-500"
-                          required
-                        >
-                          <option value={0} disabled>
-                            Seleccione un material...
-                          </option>
-                          {articulos.map((a) => (
-                            <option key={a.id} value={a.id}>
-                              {a.nombre} ({a.unidadMedida})
+                  {items.map((item, idx) => {
+                    const art = articulos.find((a) => a.id === item.articuloId);
+                    return (
+                      <div key={idx} className="flex items-center gap-2 p-2 bg-slate-900 border border-slate-800 rounded-lg">
+                        <div className="flex-1">
+                          <select
+                            value={item.articuloId}
+                            onChange={(e) => updateItemRow(idx, 'articuloId', Number(e.target.value))}
+                            className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-emerald-500"
+                            required
+                          >
+                            <option value={0} disabled>
+                              Seleccione un material...
                             </option>
-                          ))}
-                        </select>
-                      </div>
+                            {articulos.map((a) => (
+                              <option key={a.id} value={a.id}>
+                                {a.nombre} ({a.unidadMedida}) {!a.esFraccionable ? '[Solo Enteros]' : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
-                      <div className="w-28">
-                        <input
-                          type="number"
-                          step="any"
-                          min="0.01"
-                          value={item.cantidadRecibida}
-                          onChange={(e) => updateItemRow(idx, 'cantidadRecibida', Number(e.target.value))}
-                          placeholder="Cantidad"
-                          className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-emerald-500 font-mono text-right"
-                          required
-                        />
-                      </div>
+                        <div className="w-32">
+                          <div className="relative">
+                            <input
+                              type="number"
+                              step="any"
+                              value={item.cantidadRecibida}
+                              onKeyDown={(e) => handleItemKeyDown(e, idx)}
+                              onChange={(e) => {
+                                const val = e.target.value === '' ? 0 : Number(e.target.value);
+                                updateItemRow(idx, 'cantidadRecibida', val);
+                                if (art && !art.esFraccionable && val % 1 !== 0) {
+                                  setFormError(`El artículo '${art.nombre}' no es fraccionable: solo se permiten enteros.`);
+                                } else {
+                                  setFormError(null);
+                                }
+                              }}
+                              placeholder="Cantidad"
+                              className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-emerald-500 font-mono text-right"
+                              required
+                            />
+                            {art && (
+                              <span className="absolute -bottom-3.5 right-1 text-[9px] text-slate-500 font-mono">
+                                {art.esFraccionable ? 'decimal' : 'entero'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
 
-                      <button
-                        type="button"
-                        onClick={() => removeItemRow(idx)}
-                        disabled={items.length <= 1}
-                        className="p-1.5 text-slate-500 hover:text-red-400 disabled:opacity-30"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
+                        <button
+                          type="button"
+                          onClick={() => removeItemRow(idx)}
+                          disabled={items.length <= 1}
+                          className="p-1.5 text-slate-500 hover:text-red-400 disabled:opacity-30"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

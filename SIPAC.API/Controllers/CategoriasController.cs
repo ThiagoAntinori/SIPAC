@@ -41,9 +41,14 @@ public class CategoriasController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Nombre))
             return BadRequest(new { message = "El nombre de categoría es requerido" });
 
+        var nombreLimpio = request.Nombre.Trim();
+        var existe = await _context.Categorias.AnyAsync(c => c.Nombre.ToLower() == nombreLimpio.ToLower());
+        if (existe)
+            return BadRequest(new { message = "Ya existe una categoría de artículo con ese nombre" });
+
         var categoria = new Categoria
         {
-            Nombre = request.Nombre.Trim()
+            Nombre = nombreLimpio
         };
 
         _context.Categorias.Add(categoria);
@@ -60,10 +65,36 @@ public class CategoriasController : ControllerBase
     [HttpPut("{id}")]
     public async Task<ActionResult> Update(int id, [FromBody] CreateCategoriaDto request)
     {
-        var categoria = await _context.Categorias.FindAsync(id);
-        if (categoria == null) return NotFound();
+        if (string.IsNullOrWhiteSpace(request.Nombre))
+            return BadRequest(new { message = "El nombre de categoría es requerido" });
 
-        categoria.Nombre = request.Nombre.Trim();
+        var categoria = await _context.Categorias.FindAsync(id);
+        if (categoria == null) return NotFound(new { message = "Categoría no encontrada" });
+
+        var nombreLimpio = request.Nombre.Trim();
+        var existe = await _context.Categorias.AnyAsync(c => c.Id != id && c.Nombre.ToLower() == nombreLimpio.ToLower());
+        if (existe)
+            return BadRequest(new { message = "Ya existe otra categoría de artículo con ese nombre" });
+
+        categoria.Nombre = nombreLimpio;
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> Delete(int id)
+    {
+        var categoria = await _context.Categorias.FindAsync(id);
+        if (categoria == null) return NotFound(new { message = "Categoría no encontrada" });
+
+        var totalArticulos = await _context.Articulos.CountAsync(a => a.CategoriaId == id);
+        if (totalArticulos > 0)
+        {
+            return BadRequest(new { message = $"No se puede eliminar la categoría porque contiene {totalArticulos} artículo(s) asociado(s)." });
+        }
+
+        _context.Categorias.Remove(categoria);
         await _context.SaveChangesAsync();
 
         return NoContent();

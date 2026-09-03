@@ -80,6 +80,19 @@ public class ComprasController : ControllerBase
 
         foreach (var det in request.Detalles)
         {
+            if (det.CantidadRecibida <= 0)
+                return BadRequest(new { message = "La cantidad recibida debe ser mayor a 0 en todos los artículos." });
+
+            var artCheck = await _context.Articulos.FindAsync(det.ArticuloId);
+            if (artCheck == null || !artCheck.Activo)
+                return BadRequest(new { message = $"El artículo con ID {det.ArticuloId} no existe o está inactivo." });
+
+            if (!artCheck.EsFraccionable && det.CantidadRecibida % 1 != 0)
+                return BadRequest(new { message = $"El artículo '{artCheck.Nombre}' no es fraccionable y no admite cantidades con decimales." });
+        }
+
+        foreach (var det in request.Detalles)
+        {
             var articulo = await _context.Articulos.FindAsync(det.ArticuloId);
             if (articulo != null)
             {

@@ -23,20 +23,44 @@ var rawDatabaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
 
 var npgsqlConnection = ConvertPostgresUriToNpgsql(rawDatabaseUrl);
 
+var tursoUrl = Environment.GetEnvironmentVariable("TURSO_DATABASE_URL")
+    ?? builder.Configuration.GetConnectionString("TursoConnection");
+var tursoToken = Environment.GetEnvironmentVariable("TURSO_AUTH_TOKEN");
+
 builder.Services.AddDbContext<SipacDbContext>((sp, options) =>
 {
     var interceptor = sp.GetRequiredService<AuditInterceptor>();
     options.AddInterceptors(interceptor);
 
-    if (!string.IsNullOrWhiteSpace(npgsqlConnection) && (isProduction || Environment.GetEnvironmentVariable("DATABASE_URL") != null))
+    // 1. Prioridad: Turso Cloud (libSQL)
+    if (!string.IsNullOrWhiteSpace(tursoUrl))
     {
-        // PostgreSQL para Supabase / Render / Producción
+        var rawUrl = tursoUrl.Trim();
+        if (rawUrl.StartsWith("libsql://", StringComparison.OrdinalIgnoreCase))
+        {
+            rawUrl = "https://" + rawUrl.Substring("libsql://".Length);
+        }
+        else if (!rawUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !rawUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            rawUrl = "https://" + rawUrl;
+        }
+
+        var uri = new Uri(rawUrl);
+        var baseUrl = $"{uri.Scheme}://{uri.Authority}";
+        var connString = $"{baseUrl}/v2/pipeline;{tursoToken?.Trim()}";
+
+        Console.WriteLine($"[Database] Conectando a Turso Cloud (libSQL): {baseUrl}/v2/pipeline");
+        options.UseLibSql(connString);
+    }
+    // 2. PostgreSQL (Supabase / Render)
+    else if (!string.IsNullOrWhiteSpace(npgsqlConnection) && (isProduction || Environment.GetEnvironmentVariable("DATABASE_URL") != null))
+    {
         options.UseNpgsql(npgsqlConnection);
     }
+    // 3. Fallback: SQLite local en disco
     else
     {
-        // SQLite para desarrollo local cuando no hay DATABASE_URL configurada
-        options.UseSqlite(builder.Configuration.GetConnectionString("SqliteConnection") ?? "Data Source=sipac.db");
+        options.UseSqlite(builder.Configuration.GetConnectionString("SqliteConnection") ?? "Data Source=sipac_dev.db");
     }
 });
 

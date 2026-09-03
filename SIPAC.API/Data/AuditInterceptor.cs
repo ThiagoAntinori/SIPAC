@@ -48,7 +48,25 @@ public class AuditInterceptor : SaveChangesInterceptor
                 Timestamp = DateTime.UtcNow
             };
 
-            if (entry.State == EntityState.Modified)
+            if (entry.State == EntityState.Added)
+            {
+                var currentValues = new Dictionary<string, object?>();
+                foreach (var prop in entry.CurrentValues.Properties)
+                {
+                    currentValues[prop.Name] = entry.CurrentValues[prop];
+                }
+                audit.ValoresNuevos = JsonSerializer.Serialize(currentValues);
+            }
+            else if (entry.State == EntityState.Deleted)
+            {
+                var originalValues = new Dictionary<string, object?>();
+                foreach (var prop in entry.OriginalValues.Properties)
+                {
+                    originalValues[prop.Name] = entry.OriginalValues[prop];
+                }
+                audit.ValoresAnteriores = JsonSerializer.Serialize(originalValues);
+            }
+            else if (entry.State == EntityState.Modified)
             {
                 var originalValues = new Dictionary<string, object?>();
                 var currentValues = new Dictionary<string, object?>();

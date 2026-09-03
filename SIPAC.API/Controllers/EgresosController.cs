@@ -85,6 +85,9 @@ public class EgresosController : ControllerBase
         if (articulo.StockActual < request.Cantidad)
             return BadRequest(new { message = $"Stock insuficiente. Stock disponible: {articulo.StockActual} {articulo.UnidadMedida}" });
 
+        if (!articulo.EsFraccionable && request.Cantidad % 1 != 0)
+            return BadRequest(new { message = $"El artículo '{articulo.Nombre}' no es fraccionable y no admite cantidades con decimales." });
+
         var ot = await _context.OrdenesTrabajo
             .Include(o => o.Responsable)
             .Include(o => o.UnidadFuncional)

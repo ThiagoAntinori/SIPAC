@@ -49,6 +49,7 @@ export interface CategoriaTrabajo {
   id: string;
   nombre: string;
   activo: boolean;
+  cantidadOrdenes?: number;
 }
 
 export interface UnidadFuncional {

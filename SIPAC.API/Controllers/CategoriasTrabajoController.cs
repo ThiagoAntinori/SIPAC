@@ -68,9 +68,14 @@ public class CategoriasTrabajoController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Nombre))
             return BadRequest(new { message = "El nombre del rubro/categoría es requerido" });
 
+        var nombreLimpio = request.Nombre.Trim();
+        var existe = await _context.CategoriasTrabajo.AnyAsync(c => c.Nombre.ToLower() == nombreLimpio.ToLower());
+        if (existe)
+            return BadRequest(new { message = "Ya existe una categoría/rubro de trabajo con ese nombre" });
+
         var categoria = new CategoriaTrabajo
         {
-            Nombre = request.Nombre.Trim(),
+            Nombre = nombreLimpio,
             Activo = true
         };
 
@@ -96,9 +101,33 @@ public class CategoriasTrabajoController : ControllerBase
         if (categoria == null)
             return NotFound(new { message = $"Categoría de Trabajo #{id} no encontrada" });
 
-        categoria.Nombre = request.Nombre.Trim();
+        var nombreLimpio = request.Nombre.Trim();
+        var existe = await _context.CategoriasTrabajo.AnyAsync(c => c.Id != id && c.Nombre.ToLower() == nombreLimpio.ToLower());
+        if (existe)
+            return BadRequest(new { message = "Ya existe otra categoría/rubro de trabajo con ese nombre" });
+
+        categoria.Nombre = nombreLimpio;
         categoria.Activo = request.Activo;
 
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> Delete(Guid id)
+    {
+        var categoria = await _context.CategoriasTrabajo.FindAsync(id);
+        if (categoria == null)
+            return NotFound(new { message = $"Categoría de Trabajo #{id} no encontrada" });
+
+        var totalOrdenes = await _context.OrdenesTrabajo.CountAsync(o => o.CategoriaId == id);
+        if (totalOrdenes > 0)
+        {
+            return BadRequest(new { message = $"No se puede eliminar el rubro porque tiene {totalOrdenes} orden(es) de trabajo asociada(s). Puede desactivarlo en su lugar." });
+        }
+
+        _context.CategoriasTrabajo.Remove(categoria);
         await _context.SaveChangesAsync();
 
         return NoContent();

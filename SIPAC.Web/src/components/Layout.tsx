@@ -15,6 +15,7 @@ import {
   X,
   Boxes,
   UserCheck,
+  Tags,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -40,6 +41,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { label: 'Órdenes de Trabajo', path: '/ordenes', icon: ClipboardList },
     { label: 'Ajustes de Stock', path: '/ajustes', icon: SlidersHorizontal },
     { label: 'Personal', path: '/empleados', icon: Users },
+    { label: 'Categorías', path: '/categorias', icon: Tags },
   ];
 
   if (user?.rol === 'Admin') {

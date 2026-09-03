@@ -52,6 +52,19 @@ public class AjustesController : ControllerBase
         var articulo = await _context.Articulos.FindAsync(request.ArticuloId);
         if (articulo == null) return NotFound(new { message = "Artículo no encontrado" });
 
+        if (request.Cantidad < 0)
+            return BadRequest(new { message = "La cantidad del ajuste no puede ser negativa." });
+
+        if (!articulo.EsFraccionable && request.Cantidad % 1 != 0)
+        {
+            return BadRequest(new { message = $"El artículo '{articulo.Nombre}' no es fraccionable y no admite cantidades con decimales." });
+        }
+
+        if (request.TipoAjuste.Equals("Baja", StringComparison.OrdinalIgnoreCase) && articulo.StockActual < request.Cantidad)
+        {
+            return BadRequest(new { message = $"Stock insuficiente para realizar la baja. Stock disponible: {articulo.StockActual} {articulo.UnidadMedida}." });
+        }
+
         var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         int.TryParse(userIdStr, out var userId);
         if (userId == 0)

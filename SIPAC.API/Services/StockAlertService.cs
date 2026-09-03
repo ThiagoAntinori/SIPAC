@@ -17,7 +17,7 @@ public class StockAlertService
     {
         return await _context.Articulos
             .Include(a => a.Categoria)
-            .Where(a => a.Activo && a.StockActual <= a.StockMinimo)
+            .Where(a => a.Activo && (double)a.StockActual <= (double)a.StockMinimo)
             .OrderBy(a => a.StockActual)
             .ToListAsync();
     }

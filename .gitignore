@@ -10,6 +10,7 @@ obj/
 *.db
 *.db-shm
 *.db-wal
+*.sql
 
 # Node / Frontend Build artifacts
 node_modules/

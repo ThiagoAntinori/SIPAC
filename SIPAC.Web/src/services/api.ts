@@ -64,6 +64,7 @@ export const categoriasApi = {
   getAll: () => api.get<Categoria[]>('/categorias').then((r) => r.data),
   create: (data: { nombre: string }) => api.post<Categoria>('/categorias', data).then((r) => r.data),
   update: (id: number, data: { nombre: string }) => api.put(`/categorias/${id}`, data).then((r) => r.data),
+  delete: (id: number) => api.delete(`/categorias/${id}`).then((r) => r.data),
 };
 
 export const empleadosApi = {
@@ -85,6 +86,7 @@ export const categoriasTrabajoApi = {
     api.get<CategoriaTrabajo[]>('/categoriastrabajo', { params }).then((r) => r.data),
   create: (data: { nombre: string }) => api.post<CategoriaTrabajo>('/categoriastrabajo', data).then((r) => r.data),
   update: (id: string, data: { nombre: string; activo: boolean }) => api.put(`/categoriastrabajo/${id}`, data).then((r) => r.data),
+  delete: (id: string) => api.delete(`/categoriastrabajo/${id}`).then((r) => r.data),
 };
 
 export const unidadesFuncionalesApi = {

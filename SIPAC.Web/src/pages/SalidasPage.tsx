@@ -12,6 +12,7 @@ import {
   X,
   MapPin,
   CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -25,6 +26,7 @@ export const SalidasPage: React.FC = () => {
   const [ordenTrabajoId, setOrdenTrabajoId] = useState<string>('');
   const [cantidad, setCantidad] = useState<number>(1);
   const [observacion, setObservacion] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
 
   const { data: egresos = [], isLoading } = useQuery({
     queryKey: ['egresos'],
@@ -67,7 +69,9 @@ export const SalidasPage: React.FC = () => {
       closeModal();
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Error al registrar la salida');
+      const msg = err.response?.data?.message || 'Error al registrar la salida';
+      setFormError(msg);
+      toast.error(msg);
     },
   });
 
@@ -76,23 +80,61 @@ export const SalidasPage: React.FC = () => {
     setOrdenTrabajoId(ordenesDisponibles[0]?.idOt || '');
     setCantidad(1);
     setObservacion('');
+    setFormError(null);
     setModalOpen(true);
   };
 
   const closeModal = () => {
     setModalOpen(false);
+    setFormError(null);
+  };
+
+  const handleIntegerKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (selectedArticulo && !selectedArticulo.esFraccionable && (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '-')) {
+      e.preventDefault();
+      setFormError(`El artículo '${selectedArticulo.nombre}' no es fraccionable: solo se admiten números enteros.`);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!articuloId || !ordenTrabajoId || cantidad <= 0) {
-      toast.error('Complete todos los campos obligatorios');
+    setFormError(null);
+
+    if (!articuloId) {
+      const msg = 'Debe seleccionar un artículo para la salida.';
+      setFormError(msg);
+      toast.error(msg);
       return;
     }
+
+    if (!ordenTrabajoId) {
+      const msg = 'Debe asociar la salida a una Orden de Trabajo activa.';
+      setFormError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (isNaN(cantidad) || cantidad <= 0) {
+      const msg = 'La cantidad a entregar debe ser un número mayor a 0.';
+      setFormError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (selectedArticulo && !selectedArticulo.esFraccionable && cantidad % 1 !== 0) {
+      const msg = `El artículo '${selectedArticulo.nombre}' no es fraccionable: no se permiten cantidades con decimales. Ingrese un valor entero.`;
+      setFormError(msg);
+      toast.error(msg);
+      return;
+    }
+
     if (selectedArticulo && cantidad > selectedArticulo.stockActual) {
-      toast.error(`Stock insuficiente. Disponible: ${selectedArticulo.stockActual} ${selectedArticulo.unidadMedida}`);
+      const msg = `Stock insuficiente: Desea entregar ${cantidad} ${selectedArticulo.unidadMedida}, pero solo hay ${selectedArticulo.stockActual} disponibles.`;
+      setFormError(msg);
+      toast.error(msg);
       return;
     }
+
     createMutation.mutate();
   };
 
@@ -206,12 +248,31 @@ export const SalidasPage: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4 text-xs">
+              {formError && (
+                <div className="p-3 bg-red-950/80 border border-red-800/80 rounded-xl text-red-200 text-xs flex items-start space-x-2.5">
+                  <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 font-medium">{formError}</div>
+                </div>
+              )}
+
+              {selectedArticulo && cantidad > selectedArticulo.stockActual && (
+                <div className="p-3 bg-amber-950/80 border border-amber-800/80 rounded-xl text-amber-200 text-xs flex items-start space-x-2.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 font-medium">
+                    Atención: Desea entregar {cantidad} {selectedArticulo.unidadMedida}, pero el stock actual es de {selectedArticulo.stockActual} {selectedArticulo.unidadMedida}.
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Artículo a Entregar *</label>
                 <select
                   value={articuloId}
-                  onChange={(e) => setArticuloId(Number(e.target.value))}
+                  onChange={(e) => {
+                    setArticuloId(Number(e.target.value));
+                    setFormError(null);
+                  }}
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
                   required
                 >
@@ -220,7 +281,7 @@ export const SalidasPage: React.FC = () => {
                   </option>
                   {articulos.map((a) => (
                     <option key={a.id} value={a.id}>
-                      {a.nombre} (Stock: {a.stockActual} {a.unidadMedida})
+                      {a.nombre} (Stock: {a.stockActual} {a.unidadMedida}) {!a.esFraccionable ? '[Solo Enteros]' : ''}
                     </option>
                   ))}
                 </select>
@@ -229,6 +290,9 @@ export const SalidasPage: React.FC = () => {
                     Stock disponible:{' '}
                     <span className="font-mono text-emerald-400 font-bold">
                       {selectedArticulo.stockActual} {selectedArticulo.unidadMedida}
+                    </span>
+                    <span className="ml-2 text-slate-500">
+                      ({selectedArticulo.esFraccionable ? 'Fraccionable con decimales' : 'No fraccionable, solo enteros'})
                     </span>
                   </p>
                 )}
@@ -240,7 +304,10 @@ export const SalidasPage: React.FC = () => {
                 </label>
                 <select
                   value={ordenTrabajoId}
-                  onChange={(e) => setOrdenTrabajoId(e.target.value)}
+                  onChange={(e) => {
+                    setOrdenTrabajoId(e.target.value);
+                    setFormError(null);
+                  }}
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
                   required
                 >
@@ -270,16 +337,28 @@ export const SalidasPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">
-                  Cantidad a Entregar ({selectedArticulo?.unidadMedida || 'Unidad'}) *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-slate-300 font-semibold">
+                    Cantidad a Entregar ({selectedArticulo?.unidadMedida || 'Unidad'}) *
+                  </label>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {selectedArticulo?.esFraccionable ? 'Decimal o entero' : 'Solo enteros'}
+                  </span>
+                </div>
                 <input
                   type="number"
-                  step={selectedArticulo?.esFraccionable ? '0.01' : '1'}
-                  min="0.01"
-                  max={selectedArticulo?.stockActual}
+                  step="any"
                   value={cantidad}
-                  onChange={(e) => setCantidad(Number(e.target.value))}
+                  onKeyDown={handleIntegerKeyDown}
+                  onChange={(e) => {
+                    const val = e.target.value === '' ? 0 : Number(e.target.value);
+                    setCantidad(val);
+                    if (selectedArticulo && !selectedArticulo.esFraccionable && val % 1 !== 0) {
+                      setFormError(`El artículo '${selectedArticulo.nombre}' no es fraccionable: solo se permiten números enteros.`);
+                    } else {
+                      setFormError(null);
+                    }
+                  }}
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 font-mono"
                   required
                 />

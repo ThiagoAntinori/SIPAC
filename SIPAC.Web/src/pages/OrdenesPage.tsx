@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ordenesApi,
@@ -31,6 +32,7 @@ import {
   AlertCircle,
   FileText,
   Check,
+  Tags,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -333,13 +335,23 @@ export const OrdenesPage: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={openCreateModal}
-          className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/25 transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Nueva Orden de Trabajo</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          <Link
+            to="/categorias?tab=trabajo"
+            className="flex items-center space-x-2 px-3.5 py-2.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white rounded-xl text-sm font-semibold transition-all shadow-sm"
+          >
+            <Tags className="w-4 h-4 text-blue-400" />
+            <span>Gestionar Rubros</span>
+          </Link>
+
+          <button
+            onClick={openCreateModal}
+            className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/25 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nueva Orden de Trabajo</span>
+          </button>
+        </div>
       </div>
 
       {/* ── KPI Quick Bar ─────────────────────────────────────────────────── */}

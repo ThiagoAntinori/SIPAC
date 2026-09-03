@@ -28,8 +28,7 @@ public class DashboardController : ControllerBase
         var totalArticulos = await _context.Articulos.CountAsync(a => a.Activo);
 
         var stockCriticoList = await _context.Articulos
-            .Include(a => a.Categoria)
-            .Where(a => a.Activo && a.StockActual <= a.StockMinimo)
+            .Where(a => a.Activo && (double)a.StockActual <= (double)a.StockMinimo)
             .OrderBy(a => a.Nombre)
             .Select(a => new ArticuloDto
             {
@@ -56,7 +55,7 @@ public class DashboardController : ControllerBase
         var egresosHoy = await _context.EgresosConsumo
             .CountAsync(e => e.FechaHora >= hoy);
 
-        var egresosEntities = await _context.EgresosConsumo
+        var egresosRecientesEntities = await _context.EgresosConsumo
             .Include(e => e.Articulo)
             .Include(e => e.OrdenTrabajo).ThenInclude(o => o!.Responsable)
             .Include(e => e.OrdenTrabajo).ThenInclude(o => o!.UnidadFuncional)
@@ -65,20 +64,20 @@ public class DashboardController : ControllerBase
             .Take(5)
             .ToListAsync();
 
-        var egresosRecientes = egresosEntities.Select(e => new EgresoDto
+        var egresosRecientes = egresosRecientesEntities.Select(e => new EgresoDto
         {
             Id = e.Id,
             ArticuloId = e.ArticuloId,
-            ArticuloNombre = e.Articulo != null ? e.Articulo.Nombre : "",
-            UnidadMedida = e.Articulo != null ? e.Articulo.UnidadMedida : "",
+            ArticuloNombre = e.Articulo?.Nombre ?? "",
+            UnidadMedida = e.Articulo?.UnidadMedida ?? "",
             OrdenTrabajoId = e.OrdenTrabajoId,
-            NumeroOT = e.OrdenTrabajo != null ? e.OrdenTrabajo.NumeroOT : "",
+            NumeroOT = e.OrdenTrabajo?.NumeroOT ?? "",
             UnidadFuncionalDisplay = e.OrdenTrabajo?.UnidadFuncional?.DisplayNombre ?? "",
             EmpleadoNombre = e.OrdenTrabajo?.Responsable?.Nombre ?? "",
             Cantidad = e.Cantidad,
             FechaHora = e.FechaHora,
             UsuarioId = e.UsuarioId,
-            UsuarioNombre = e.Usuario != null ? e.Usuario.NombreCompleto : "",
+            UsuarioNombre = e.Usuario?.NombreCompleto ?? "",
             Observacion = e.Observacion
         }).ToList();
 

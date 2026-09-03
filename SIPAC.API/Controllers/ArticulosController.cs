@@ -41,7 +41,7 @@ public class ArticulosController : ControllerBase
             query = query.Where(a => a.CategoriaId == categoriaId.Value);
 
         if (soloCriticos.HasValue && soloCriticos.Value)
-            query = query.Where(a => a.StockActual <= a.StockMinimo);
+            query = query.Where(a => (double)a.StockActual <= (double)a.StockMinimo);
 
         var list = await query
             .OrderBy(a => a.Nombre)
@@ -85,6 +85,17 @@ public class ArticulosController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ArticuloDto>> Create([FromBody] CreateArticuloDto request)
     {
+        if (request.StockActual < 0 || request.StockMinimo < 0)
+            return BadRequest(new { message = "Los valores de stock no pueden ser negativos." });
+
+        if (!request.EsFraccionable)
+        {
+            if (request.StockActual % 1 != 0 || request.StockMinimo % 1 != 0)
+            {
+                return BadRequest(new { message = "Los artículos que no son fraccionables no permiten números decimales en stock actual ni stock mínimo." });
+            }
+        }
+
         var articulo = new Articulo
         {
             Nombre = request.Nombre.Trim(),
@@ -120,6 +131,21 @@ public class ArticulosController : ControllerBase
     {
         var articulo = await _context.Articulos.FindAsync(id);
         if (articulo == null) return NotFound();
+
+        if (request.StockMinimo < 0)
+            return BadRequest(new { message = "El stock mínimo no puede ser negativo." });
+
+        if (!request.EsFraccionable)
+        {
+            if (request.StockMinimo % 1 != 0)
+            {
+                return BadRequest(new { message = "Los artículos que no son fraccionables no permiten números decimales en el stock mínimo." });
+            }
+            if (articulo.StockActual % 1 != 0)
+            {
+                return BadRequest(new { message = "No se puede marcar el artículo como no fraccionable porque su stock actual posee decimales. Realice un ajuste de stock primero." });
+            }
+        }
 
         articulo.Nombre = request.Nombre.Trim();
         articulo.CategoriaId = request.CategoriaId;

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { articulosApi, categoriasApi } from '../services/api';
 import { Articulo } from '../types';
@@ -13,6 +14,7 @@ import {
   AlertTriangle,
   X,
   Boxes,
+  Tags,
 } from 'lucide-react';
 
 export const ArticulosPage: React.FC = () => {
@@ -30,6 +32,7 @@ export const ArticulosPage: React.FC = () => {
   const [esFraccionable, setEsFraccionable] = useState(false);
   const [stockActual, setStockActual] = useState<number>(0);
   const [stockMinimo, setStockMinimo] = useState<number>(5);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const { data: articulos = [], isLoading } = useQuery({
     queryKey: ['articulos', search, categoriaId, soloCriticos],
@@ -70,7 +73,9 @@ export const ArticulosPage: React.FC = () => {
       closeModal();
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Error al guardar el artículo');
+      const msg = err.response?.data?.message || 'Error al guardar el artículo';
+      setFormError(msg);
+      toast.error(msg);
     },
   });
 
@@ -90,6 +95,7 @@ export const ArticulosPage: React.FC = () => {
     setEsFraccionable(false);
     setStockActual(0);
     setStockMinimo(5);
+    setFormError(null);
     setModalOpen(true);
   };
 
@@ -101,20 +107,69 @@ export const ArticulosPage: React.FC = () => {
     setEsFraccionable(a.esFraccionable);
     setStockActual(a.stockActual);
     setStockMinimo(a.stockMinimo);
+    setFormError(null);
     setModalOpen(true);
   };
 
   const closeModal = () => {
     setModalOpen(false);
     setEditingArticulo(null);
+    setFormError(null);
+  };
+
+  const handleIntegerKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!esFraccionable && (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '-')) {
+      e.preventDefault();
+      setFormError('Este artículo no es fraccionable: solo se admiten números enteros.');
+    }
   };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+
     if (!nombre.trim()) {
-      toast.error('El nombre es obligatorio');
+      const msg = 'El nombre del material / insumo es obligatorio.';
+      setFormError(msg);
+      toast.error(msg);
       return;
     }
+
+    if (!editingArticulo && (isNaN(stockActual) || stockActual < 0)) {
+      const msg = 'El stock inicial debe ser un número mayor o igual a 0.';
+      setFormError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (isNaN(stockMinimo) || stockMinimo < 0) {
+      const msg = 'El stock mínimo debe ser un número mayor o igual a 0.';
+      setFormError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (!esFraccionable) {
+      if (!editingArticulo && stockActual % 1 !== 0) {
+        const msg = 'Este artículo no es fraccionable: el stock inicial debe ser un número entero (sin decimales).';
+        setFormError(msg);
+        toast.error(msg);
+        return;
+      }
+      if (stockMinimo % 1 !== 0) {
+        const msg = 'Este artículo no es fraccionable: el stock mínimo debe ser un número entero (sin decimales).';
+        setFormError(msg);
+        toast.error(msg);
+        return;
+      }
+      if (editingArticulo && editingArticulo.stockActual % 1 !== 0) {
+        const msg = `No se puede guardar como no fraccionable porque el stock actual (${editingArticulo.stockActual}) tiene decimales. Ajuste el stock primero.`;
+        setFormError(msg);
+        toast.error(msg);
+        return;
+      }
+    }
+
     saveMutation.mutate();
   };
 
@@ -127,13 +182,23 @@ export const ArticulosPage: React.FC = () => {
           <p className="text-slate-400 text-sm">Catálogo de insumos, materiales y control de existencias</p>
         </div>
 
-        <button
-          onClick={openCreateModal}
-          className="flex items-center space-x-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/20 transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Nuevo Artículo</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          <Link
+            to="/categorias?tab=articulos"
+            className="flex items-center space-x-2 px-3.5 py-2.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white rounded-xl text-sm font-semibold transition-all shadow-sm"
+          >
+            <Tags className="w-4 h-4 text-blue-400" />
+            <span>Gestionar Categorías</span>
+          </Link>
+
+          <button
+            onClick={openCreateModal}
+            className="flex items-center space-x-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/20 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nuevo Artículo</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters Bar */}
@@ -274,13 +339,23 @@ export const ArticulosPage: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-4 text-xs">
+            <form onSubmit={handleSave} noValidate className="space-y-4 text-xs">
+              {formError && (
+                <div className="p-3 bg-red-950/80 border border-red-800/80 rounded-xl text-red-200 text-xs flex items-start space-x-2.5">
+                  <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 font-medium">{formError}</div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Nombre del Material / Insumo *</label>
                 <input
                   type="text"
                   value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
+                  onChange={(e) => {
+                    setNombre(e.target.value);
+                    if (formError) setFormError(null);
+                  }}
                   placeholder="Ej. Cinta Aisladora 3M 20m"
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
                   required
@@ -325,27 +400,53 @@ export const ArticulosPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 {!editingArticulo && (
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Stock Inicial</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-slate-300 font-semibold">Stock Inicial</label>
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        {esFraccionable ? 'Decimal o entero' : 'Solo enteros'}
+                      </span>
+                    </div>
                     <input
                       type="number"
                       step="any"
-                      min="0"
                       value={stockActual}
-                      onChange={(e) => setStockActual(Number(e.target.value))}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
+                      onKeyDown={handleIntegerKeyDown}
+                      onChange={(e) => {
+                        const val = e.target.value === '' ? 0 : Number(e.target.value);
+                        setStockActual(val);
+                        if (!esFraccionable && val % 1 !== 0) {
+                          setFormError('Los artículos no fraccionables solo permiten números enteros en el stock inicial.');
+                        } else {
+                          setFormError(null);
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 font-mono"
                     />
                   </div>
                 )}
 
                 <div className={editingArticulo ? 'col-span-2' : ''}>
-                  <label className="block text-slate-300 font-semibold mb-1">Stock Mínimo (Alerta)</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-slate-300 font-semibold">Stock Mínimo (Alerta)</label>
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      {esFraccionable ? 'Decimal o entero' : 'Solo enteros'}
+                    </span>
+                  </div>
                   <input
                     type="number"
                     step="any"
-                    min="0"
                     value={stockMinimo}
-                    onChange={(e) => setStockMinimo(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
+                    onKeyDown={handleIntegerKeyDown}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? 0 : Number(e.target.value);
+                      setStockMinimo(val);
+                      if (!esFraccionable && val % 1 !== 0) {
+                        setFormError('Los artículos no fraccionables solo permiten números enteros en el stock mínimo.');
+                      } else {
+                        setFormError(null);
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 font-mono"
                   />
                 </div>
               </div>
@@ -355,10 +456,22 @@ export const ArticulosPage: React.FC = () => {
                   type="checkbox"
                   id="esFraccionable"
                   checked={esFraccionable}
-                  onChange={(e) => setEsFraccionable(e.target.checked)}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setEsFraccionable(checked);
+                    if (!checked) {
+                      if ((!editingArticulo && stockActual % 1 !== 0) || stockMinimo % 1 !== 0) {
+                        setFormError('Atención: Al quitar fraccionable, los campos de stock deben ser números enteros.');
+                      } else {
+                        setFormError(null);
+                      }
+                    } else {
+                      setFormError(null);
+                    }
+                  }}
                   className="rounded bg-slate-950 border-slate-800 text-blue-600 focus:ring-blue-500"
                 />
-                <label htmlFor="esFraccionable" className="text-slate-300 cursor-pointer">
+                <label htmlFor="esFraccionable" className="text-slate-300 cursor-pointer select-none">
                   Permite egresos fraccionados (decimales como 1.5 metros)
                 </label>
               </div>

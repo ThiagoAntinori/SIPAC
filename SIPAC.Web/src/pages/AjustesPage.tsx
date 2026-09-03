@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ajustesApi, articulosApi } from '../services/api';
 import toast from 'react-hot-toast';
-import { SlidersHorizontal, Plus, X, AlertOctagon } from 'lucide-react';
+import { SlidersHorizontal, Plus, X, AlertOctagon, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 
 export const AjustesPage: React.FC = () => {
@@ -15,6 +15,7 @@ export const AjustesPage: React.FC = () => {
   const [cantidad, setCantidad] = useState<number>(0);
   const [motivo, setMotivo] = useState('Recuento de inventario físico');
   const [justificacion, setJustificacion] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
 
   const { data: ajustes = [], isLoading } = useQuery({
     queryKey: ['ajustes'],
@@ -45,7 +46,9 @@ export const AjustesPage: React.FC = () => {
       closeModal();
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Error al procesar el ajuste');
+      const msg = err.response?.data?.message || 'Error al procesar el ajuste';
+      setFormError(msg);
+      toast.error(msg);
     },
   });
 
@@ -55,19 +58,61 @@ export const AjustesPage: React.FC = () => {
     setCantidad(0);
     setMotivo('Recuento de inventario físico');
     setJustificacion('');
+    setFormError(null);
     setModalOpen(true);
   };
 
   const closeModal = () => {
     setModalOpen(false);
+    setFormError(null);
+  };
+
+  const handleIntegerKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (selectedArticulo && !selectedArticulo.esFraccionable && (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '-')) {
+      e.preventDefault();
+      setFormError(`El artículo '${selectedArticulo.nombre}' no es fraccionable: solo se permiten números enteros.`);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!articuloId || !justificacion.trim()) {
-      toast.error('La justificación es obligatoria');
+    setFormError(null);
+
+    if (!articuloId) {
+      const msg = 'Debe seleccionar un artículo para ajustar.';
+      setFormError(msg);
+      toast.error(msg);
       return;
     }
+
+    if (isNaN(cantidad) || cantidad < 0) {
+      const msg = 'La cantidad no puede ser negativa.';
+      setFormError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (selectedArticulo && !selectedArticulo.esFraccionable && cantidad % 1 !== 0) {
+      const msg = `El artículo '${selectedArticulo.nombre}' no es fraccionable: solo se permiten números enteros (sin decimales).`;
+      setFormError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (tipoAjuste === 'Baja' && selectedArticulo && cantidad > selectedArticulo.stockActual) {
+      const msg = `Stock insuficiente para la baja: Desea descontar ${cantidad} ${selectedArticulo.unidadMedida}, pero el stock actual es de ${selectedArticulo.stockActual}.`;
+      setFormError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (!justificacion.trim()) {
+      const msg = 'La justificación auditada es obligatoria.';
+      setFormError(msg);
+      toast.error(msg);
+      return;
+    }
+
     createMutation.mutate();
   };
 
@@ -156,12 +201,31 @@ export const AjustesPage: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4 text-xs">
+              {formError && (
+                <div className="p-3 bg-red-950/80 border border-red-800/80 rounded-xl text-red-200 text-xs flex items-start space-x-2.5">
+                  <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 font-medium">{formError}</div>
+                </div>
+              )}
+
+              {tipoAjuste === 'Baja' && selectedArticulo && cantidad > selectedArticulo.stockActual && (
+                <div className="p-3 bg-amber-950/80 border border-amber-800/80 rounded-xl text-amber-200 text-xs flex items-start space-x-2.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 font-medium">
+                    Atención: Descontar {cantidad} supera el stock actual disponible ({selectedArticulo.stockActual} {selectedArticulo.unidadMedida}).
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Artículo a Ajustar *</label>
                 <select
                   value={articuloId}
-                  onChange={(e) => setArticuloId(Number(e.target.value))}
+                  onChange={(e) => {
+                    setArticuloId(Number(e.target.value));
+                    setFormError(null);
+                  }}
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
                   required
                 >
@@ -170,10 +234,21 @@ export const AjustesPage: React.FC = () => {
                   </option>
                   {articulos.map((a) => (
                     <option key={a.id} value={a.id}>
-                      {a.nombre} (Stock actual: {a.stockActual} {a.unidadMedida})
+                      {a.nombre} (Stock actual: {a.stockActual} {a.unidadMedida}) {!a.esFraccionable ? '[Solo Enteros]' : ''}
                     </option>
                   ))}
                 </select>
+                {selectedArticulo && (
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Stock actual:{' '}
+                    <span className="font-mono text-blue-400 font-bold">
+                      {selectedArticulo.stockActual} {selectedArticulo.unidadMedida}
+                    </span>
+                    <span className="ml-2 text-slate-500">
+                      ({selectedArticulo.esFraccionable ? 'Fraccionable con decimales' : 'No fraccionable, solo enteros'})
+                    </span>
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -181,7 +256,10 @@ export const AjustesPage: React.FC = () => {
                   <label className="block text-slate-300 font-semibold mb-1">Tipo de Ajuste *</label>
                   <select
                     value={tipoAjuste}
-                    onChange={(e) => setTipoAjuste(e.target.value as any)}
+                    onChange={(e) => {
+                      setTipoAjuste(e.target.value as any);
+                      setFormError(null);
+                    }}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
                   >
                     <option value="Recuento">Recuento Físico (Fijar stock exacto)</option>
@@ -191,15 +269,28 @@ export const AjustesPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">
-                    {tipoAjuste === 'Recuento' ? 'Stock Contado Real' : 'Cantidad a Ajustar'} *
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-slate-300 font-semibold">
+                      {tipoAjuste === 'Recuento' ? 'Stock Contado Real' : 'Cantidad a Ajustar'} *
+                    </label>
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      {selectedArticulo?.esFraccionable ? 'Decimal o entero' : 'Solo enteros'}
+                    </span>
+                  </div>
                   <input
                     type="number"
                     step="any"
-                    min="0"
                     value={cantidad}
-                    onChange={(e) => setCantidad(Number(e.target.value))}
+                    onKeyDown={handleIntegerKeyDown}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? 0 : Number(e.target.value);
+                      setCantidad(val);
+                      if (selectedArticulo && !selectedArticulo.esFraccionable && val % 1 !== 0) {
+                        setFormError(`El artículo '${selectedArticulo.nombre}' no es fraccionable: solo se permiten números enteros.`);
+                      } else {
+                        setFormError(null);
+                      }
+                    }}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm font-mono focus:outline-none focus:border-blue-500"
                     required
                   />

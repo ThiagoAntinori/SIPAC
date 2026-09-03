@@ -15,6 +15,7 @@ import { OrdenesPage } from './pages/OrdenesPage';
 import { EmpleadosPage } from './pages/EmpleadosPage';
 import { AjustesPage } from './pages/AjustesPage';
 import { AuditoriaPage } from './pages/AuditoriaPage';
+import { CategoriasPage } from './pages/CategoriasPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -98,6 +99,14 @@ export default function App() {
               element={
                 <Layout>
                   <AjustesPage />
+                </Layout>
+              }
+            />
+            <Route
+              path="/categorias"
+              element={
+                <Layout>
+                  <CategoriasPage />
                 </Layout>
               }
             />
