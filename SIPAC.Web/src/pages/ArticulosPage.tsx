@@ -8,14 +8,15 @@ import {
   Package,
   Plus,
   Search,
-  Filter,
   Edit2,
   Power,
   AlertTriangle,
   X,
-  Boxes,
   Tags,
 } from 'lucide-react';
+
+const inputCls = 'w-full px-3 h-9 bg-white border border-slate-300 rounded-md text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all font-medium';
+const labelCls = 'block text-xs font-bold text-slate-800 mb-1.5';
 
 export const ArticulosPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -173,143 +174,159 @@ export const ArticulosPage: React.FC = () => {
     saveMutation.mutate();
   };
 
+  const stockProgress = (actual: number, minimo: number) => {
+    if (minimo === 0) return 100;
+    const ratio = actual / (minimo * 2);
+    return Math.min(Math.round(ratio * 100), 100);
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Page Title & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wide">Pañol / Artículos</h1>
-          <p className="text-slate-400 text-sm">Catálogo de insumos, materiales y control de existencias</p>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Pañol / Artículos</h1>
+          <p className="text-slate-600 text-sm mt-0.5">Catálogo de insumos, materiales y control de existencias</p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2">
           <Link
             to="/categorias?tab=articulos"
-            className="flex items-center space-x-2 px-3.5 py-2.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white rounded-xl text-sm font-semibold transition-all shadow-sm"
+            className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-md text-xs font-bold shadow-xs transition-all duration-150"
           >
-            <Tags className="w-4 h-4 text-blue-400" />
-            <span>Gestionar Categorías</span>
+            <Tags className="w-3.5 h-3.5 text-slate-500" />
+            <span>Categorías</span>
           </Link>
 
           <button
             onClick={openCreateModal}
-            className="flex items-center space-x-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/20 transition-all"
+            className="flex items-center space-x-1.5 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md text-xs font-bold shadow-xs transition-all duration-150 active:scale-[0.99]"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
             <span>Nuevo Artículo</span>
           </button>
         </div>
       </div>
 
       {/* Filters Bar */}
-      <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl flex flex-col md:flex-row items-center gap-3">
+      <div className="p-3 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col md:flex-row items-center gap-3">
         <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nombre de artículo..."
-            className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            className="w-full pl-9 pr-4 h-9 bg-white border border-slate-300 rounded-md text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all font-medium"
           />
         </div>
 
-        <div className="w-full md:w-56">
+        <div className="w-full md:w-52">
           <select
             value={categoriaId || ''}
             onChange={(e) => setCategoriaId(e.target.value ? Number(e.target.value) : undefined)}
-            className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+            className="w-full px-3 h-9 bg-white border border-slate-300 rounded-md text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all font-medium"
           >
             <option value="">Todas las Categorías</option>
             {categorias.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nombre}
-              </option>
+              <option key={c.id} value={c.id}>{c.nombre}</option>
             ))}
           </select>
         </div>
 
-        <label className="flex items-center space-x-2 text-xs font-semibold text-amber-400 bg-amber-950/20 border border-amber-900/40 px-3 py-2 rounded-lg cursor-pointer shrink-0">
+        <label className="flex items-center space-x-2 text-xs font-bold text-amber-900 bg-amber-50 border border-amber-300 px-3 h-9 rounded-md cursor-pointer shrink-0 transition-colors hover:bg-amber-100">
           <input
             type="checkbox"
             checked={soloCriticos}
             onChange={(e) => setSoloCriticos(e.target.checked)}
-            className="rounded border-slate-800 text-amber-500 focus:ring-amber-500"
+            className="rounded border-slate-300 text-orange-600 focus:ring-orange-500"
           />
+          <AlertTriangle className="w-3.5 h-3.5 text-amber-700" />
           <span>Solo Stock Bajo</span>
         </label>
       </div>
 
       {/* Table */}
-      <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+      <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
         {isLoading ? (
-          <div className="p-8 text-center text-slate-400">Cargando artículos...</div>
+          <div className="p-8 text-center text-slate-500 text-sm font-medium">Cargando artículos...</div>
         ) : articulos.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">No se encontraron artículos con los filtros aplicados.</div>
+          <div className="p-8 text-center">
+            <Package className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+            <p className="text-slate-600 text-sm font-medium">No se encontraron artículos con los filtros aplicados.</p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+              <thead className="bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                 <tr>
                   <th className="py-3 px-4">Artículo</th>
                   <th className="py-3 px-4">Categoría</th>
                   <th className="py-3 px-4 text-center">Fraccionable</th>
                   <th className="py-3 px-4 text-right">Stock Actual</th>
                   <th className="py-3 px-4 text-right">Stock Mínimo</th>
+                  <th className="py-3 px-4 text-center w-28">Nivel</th>
                   <th className="py-3 px-4 text-center">Estado</th>
                   <th className="py-3 px-4 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-100">
                 {articulos.map((a) => {
                   const isLow = a.stockActual <= a.stockMinimo;
+                  const progress = stockProgress(a.stockActual, a.stockMinimo);
                   return (
-                    <tr key={a.id} className="hover:bg-slate-900/50 transition-colors">
+                    <tr key={a.id} className={`hover:bg-slate-50 transition-colors ${!a.activo ? 'opacity-60 bg-slate-50/50' : ''}`}>
                       <td className="py-3 px-4">
-                        <div className="font-semibold text-slate-100">{a.nombre}</div>
+                        <div className="font-semibold text-slate-900 text-sm">{a.nombre}</div>
                       </td>
-                      <td className="py-3 px-4 text-slate-400">{a.categoriaNombre}</td>
-                      <td className="py-3 px-4 text-center text-slate-400">
-                        {a.esFraccionable ? 'Sí' : 'No'}
+                      <td className="py-3 px-4 text-slate-600 font-medium">{a.categoriaNombre}</td>
+                      <td className="py-3 px-4 text-center">
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${a.esFraccionable ? 'bg-sky-50 text-sky-800 border border-sky-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
+                          {a.esFraccionable ? 'Sí' : 'No'}
+                        </span>
                       </td>
-                      <td className="py-3 px-4 text-right font-mono">
-                        <span
-                          className={`font-bold ${
-                            isLow ? 'text-red-400 font-extrabold' : 'text-slate-200'
-                          }`}
-                        >
+                      <td className="py-3 px-4 text-right">
+                        <span className={`font-mono font-bold text-sm tabular-nums ${isLow ? 'text-rose-700' : 'text-slate-900'}`}>
                           {a.stockActual} {a.unidadMedida}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right font-mono text-slate-400">
+                      <td className="py-3 px-4 text-right font-mono text-slate-600 font-medium tabular-nums">
                         {a.stockMinimo} {a.unidadMedida}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                          <div
+                            className={`h-2 rounded-full transition-all ${isLow ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-center">
                         {isLow ? (
-                          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-950/80 text-red-400 border border-red-800">
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-800 border border-rose-300">
                             <AlertTriangle className="w-3 h-3" />
-                            <span>Bajo</span>
+                            <span>{a.stockActual <= 0 ? 'Sin Stock' : 'Stock Bajo'}</span>
                           </span>
                         ) : (
-                          <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800">
+                          <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
                             Normal
                           </span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-right space-x-2">
+                      <td className="py-3 px-4 text-right space-x-1.5">
                         <button
                           onClick={() => openEditModal(a)}
-                          className="p-1.5 bg-slate-900 hover:bg-slate-800 text-blue-400 rounded-lg border border-slate-800 transition-colors"
+                          className="p-1.5 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 rounded-md border border-slate-300 transition-colors shadow-xs"
                           title="Editar"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => toggleMutation.mutate(a.id)}
-                          className={`p-1.5 rounded-lg border transition-colors ${
+                          className={`p-1.5 rounded-md border transition-colors shadow-xs ${
                             a.activo
-                              ? 'bg-slate-900 hover:bg-red-950 text-red-400 border-slate-800'
-                              : 'bg-slate-900 hover:bg-emerald-950 text-emerald-400 border-slate-800'
+                              ? 'bg-white hover:bg-rose-50 text-slate-500 hover:text-rose-700 border-slate-300 hover:border-rose-300'
+                              : 'bg-white hover:bg-emerald-50 text-slate-500 hover:text-emerald-700 border-slate-300 hover:border-emerald-300'
                           }`}
                           title={a.activo ? 'Desactivar' : 'Activar'}
                         >
@@ -327,63 +344,62 @@ export const ArticulosPage: React.FC = () => {
 
       {/* Modal Crear / Editar */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-              <h3 className="text-lg font-bold text-white flex items-center space-x-2">
-                <Package className="w-5 h-5 text-blue-400" />
-                <span>{editingArticulo ? 'Editar Artículo' : 'Nuevo Artículo'}</span>
-              </h3>
-              <button onClick={closeModal} className="text-slate-400 hover:text-white">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-slate-200 rounded-xl w-full max-w-lg shadow-xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-1.5 bg-orange-50 rounded-md">
+                  <Package className="w-4 h-4 text-orange-600" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900">
+                  {editingArticulo ? 'Editar Artículo' : 'Nuevo Artículo'}
+                </h3>
+              </div>
+              <button onClick={closeModal} className="p-1 text-slate-500 hover:text-slate-800 rounded-md hover:bg-slate-100 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSave} noValidate className="space-y-4 text-xs">
+            <form onSubmit={handleSave} noValidate className="px-6 py-4 space-y-4">
               {formError && (
-                <div className="p-3 bg-red-950/80 border border-red-800/80 rounded-xl text-red-200 text-xs flex items-start space-x-2.5">
-                  <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                  <div className="flex-1 font-medium">{formError}</div>
+                <div className="p-3 bg-rose-50 border border-rose-300 rounded-md text-rose-800 text-xs font-medium flex items-start space-x-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <div className="flex-1">{formError}</div>
                 </div>
               )}
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Nombre del Material / Insumo *</label>
+                <label className={labelCls}>Nombre del Material / Insumo *</label>
                 <input
                   type="text"
                   value={nombre}
-                  onChange={(e) => {
-                    setNombre(e.target.value);
-                    if (formError) setFormError(null);
-                  }}
+                  onChange={(e) => { setNombre(e.target.value); if (formError) setFormError(null); }}
                   placeholder="Ej. Cinta Aisladora 3M 20m"
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
+                  className={inputCls}
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Categoría / Rubro *</label>
+                  <label className={labelCls}>Categoría / Rubro *</label>
                   <select
                     value={formCategoriaId}
                     onChange={(e) => setFormCategoriaId(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
+                    className={inputCls}
                   >
                     {categorias.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nombre}
-                      </option>
+                      <option key={c.id} value={c.id}>{c.nombre}</option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Unidad de Medida *</label>
+                  <label className={labelCls}>Unidad de Medida *</label>
                   <select
                     value={unidadMedida}
                     onChange={(e) => setUnidadMedida(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
+                    className={inputCls}
                   >
                     <option value="Unidad">Unidad (u)</option>
                     <option value="Metro">Metro (m)</option>
@@ -400,12 +416,9 @@ export const ArticulosPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 {!editingArticulo && (
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-slate-300 font-semibold">Stock Inicial</label>
-                      <span className="text-[10px] text-slate-500 font-mono">
-                        {esFraccionable ? 'Decimal o entero' : 'Solo enteros'}
-                      </span>
-                    </div>
+                    <label className={labelCls}>
+                      Stock Inicial <span className="text-slate-500 font-medium">({esFraccionable ? 'decimal' : 'entero'})</span>
+                    </label>
                     <input
                       type="number"
                       step="any"
@@ -420,18 +433,15 @@ export const ArticulosPage: React.FC = () => {
                           setFormError(null);
                         }
                       }}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 font-mono"
+                      className={`${inputCls} font-mono`}
                     />
                   </div>
                 )}
 
                 <div className={editingArticulo ? 'col-span-2' : ''}>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-slate-300 font-semibold">Stock Mínimo (Alerta)</label>
-                    <span className="text-[10px] text-slate-500 font-mono">
-                      {esFraccionable ? 'Decimal o entero' : 'Solo enteros'}
-                    </span>
-                  </div>
+                  <label className={labelCls}>
+                    Stock Mínimo (Alerta) <span className="text-slate-500 font-medium">({esFraccionable ? 'decimal' : 'entero'})</span>
+                  </label>
                   <input
                     type="number"
                     step="any"
@@ -446,12 +456,12 @@ export const ArticulosPage: React.FC = () => {
                         setFormError(null);
                       }
                     }}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 font-mono"
+                    className={`${inputCls} font-mono`}
                   />
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2 pt-2">
+              <label className="flex items-center space-x-2.5 pt-1 cursor-pointer group">
                 <input
                   type="checkbox"
                   id="esFraccionable"
@@ -469,25 +479,25 @@ export const ArticulosPage: React.FC = () => {
                       setFormError(null);
                     }
                   }}
-                  className="rounded bg-slate-950 border-slate-800 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-slate-300 text-orange-600 focus:ring-orange-500"
                 />
-                <label htmlFor="esFraccionable" className="text-slate-300 cursor-pointer select-none">
+                <span className="text-sm text-slate-700 font-medium group-hover:text-slate-900 transition-colors select-none">
                   Permite egresos fraccionados (decimales como 1.5 metros)
-                </label>
-              </div>
+                </span>
+              </label>
 
-              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end space-x-2 pt-3 border-t border-slate-200 mt-2">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold"
+                  className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-md text-sm font-semibold transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={saveMutation.isPending}
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold shadow-lg shadow-blue-600/30"
+                  className="px-5 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white rounded-md text-sm font-bold shadow-xs transition-all duration-150 active:scale-[0.99]"
                 >
                   {saveMutation.isPending ? 'Guardando...' : 'Guardar Artículo'}
                 </button>

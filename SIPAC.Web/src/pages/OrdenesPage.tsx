@@ -14,9 +14,7 @@ import {
   Plus,
   Search,
   CheckCircle2,
-  Clock,
   AlertTriangle,
-  XCircle,
   X,
   MapPin,
   User,
@@ -27,14 +25,38 @@ import {
   Trash2,
   Package,
   Layers,
-  ChevronRight,
-  Sparkles,
-  AlertCircle,
   FileText,
   Check,
   Tags,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+// Design tokens
+const inputCls = 'w-full px-3 h-9 bg-white border border-slate-300 rounded-md text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all font-medium';
+const labelCls = 'block text-xs font-bold text-slate-800 mb-1.5';
+const selectCls = `${inputCls}`;
+
+// Estado badge factory (light mode)
+const estadoBadge = (estado: string) => {
+  switch (estado) {
+    case 'Finalizado':  return 'bg-emerald-50 text-emerald-900 border border-emerald-300';
+    case 'En Proceso':  return 'bg-sky-50 text-sky-900 border border-sky-300';
+    case 'Suspendido':  return 'bg-violet-50 text-violet-900 border border-violet-300';
+    case 'Cancelado':   return 'bg-slate-100 text-slate-700 border border-slate-300';
+    default:            return 'bg-amber-50 text-amber-950 border border-amber-300';
+  }
+};
+
+// Bitácora operation badge
+const bitacoraBadge = (tipo: string) => {
+  switch (tipo) {
+    case 'ALTA':          return 'bg-sky-50 text-sky-700 border border-sky-200';
+    case 'CAMBIO_ESTADO': return 'bg-violet-50 text-violet-700 border border-violet-200';
+    case 'BAJA_LOGICA':   return 'bg-rose-50 text-rose-700 border border-rose-200';
+    default:              return 'bg-slate-100 text-slate-600 border border-slate-200';
+  }
+};
 
 export const OrdenesPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -127,7 +149,6 @@ export const OrdenesPage: React.FC = () => {
     enabled: Boolean(selectedUfIdForHistorial),
   });
 
-  // Dynamic UF Resolver in Cascade
   const isLocal = sectorSelected.toUpperCase() === 'LOCAL';
 
   // Mutations
@@ -231,7 +252,6 @@ export const OrdenesPage: React.FC = () => {
     setPisoSelected(piso);
     setDeptoSelected('');
     if (sectorSelected.toUpperCase() === 'LOCAL') {
-      // Find the local matching this number
       unidadesFuncionalesApi.getDeptos('LOCAL', piso).then((data) => {
         if (data && data.length > 0) {
           setUfFinalId(data[0].id);
@@ -319,335 +339,270 @@ export const OrdenesPage: React.FC = () => {
     return { total, pendientes, enProceso, finalizadas, alertas };
   }, [ordenes]);
 
+  const modalOverlayCls = 'fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto';
+  const modalCls = 'bg-white border border-slate-200 rounded-xl w-full shadow-xl my-8';
+  const modalHeaderCls = 'flex items-center justify-between px-6 py-4 border-b border-slate-100';
+  const modalCloseBtn = 'p-1 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 transition-colors';
+  const btnSecondary = 'px-4 py-2 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 rounded-md text-sm font-semibold transition-colors';
+  const btnPrimary = 'px-5 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white rounded-md text-sm font-semibold shadow-xs transition-all duration-150 active:scale-[0.99]';
+
   return (
-    <div className="space-y-6 pb-20">
-      {/* ── Header ────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-5 pb-20">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-bold text-white tracking-wide">Órdenes de Trabajo (OT)</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-600/20 text-blue-400 border border-blue-500/30">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Órdenes de Trabajo</h1>
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-orange-50 text-orange-700 border border-orange-200/60">
               BASI Fix
             </span>
           </div>
-          <p className="text-slate-400 text-sm mt-0.5">
+          <p className="text-slate-600 text-sm mt-0.5 font-normal">
             Gestión de reclamos por Unidad Funcional, semáforo de inactividad y trazabilidad de insumos
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2">
           <Link
             to="/categorias?tab=trabajo"
-            className="flex items-center space-x-2 px-3.5 py-2.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white rounded-xl text-sm font-semibold transition-all shadow-sm"
+            className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 rounded-md text-xs font-semibold shadow-xs transition-all duration-150"
           >
-            <Tags className="w-4 h-4 text-blue-400" />
+            <Tags className="w-3.5 h-3.5 text-slate-400" />
             <span>Gestionar Rubros</span>
           </Link>
 
           <button
             onClick={openCreateModal}
-            className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/25 transition-all"
+            className="flex items-center space-x-1.5 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md text-xs font-semibold shadow-xs transition-all duration-150 active:scale-[0.99]"
           >
-            <Plus className="w-4 h-4" />
-            <span>Nueva Orden de Trabajo</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>Nueva OT</span>
           </button>
         </div>
       </div>
 
-      {/* ── KPI Quick Bar ─────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-        <button
-          onClick={() => {
-            setEstadoFilter('');
-            setSoloAlertas(false);
-          }}
-          className={`p-3 rounded-xl border text-left transition-all ${
-            estadoFilter === '' && !soloAlertas
-              ? 'bg-blue-600/15 border-blue-500/40 text-blue-400'
-              : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-          }`}
-        >
-          <p className="text-[11px] font-semibold uppercase tracking-wider">Total OTs</p>
-          <p className="text-xl font-bold text-white mt-0.5">{stats.total}</p>
-        </button>
+      {/* KPI Quick Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        {[
+          { label: 'Total OTs', value: stats.total, active: estadoFilter === '' && !soloAlertas, onClick: () => { setEstadoFilter(''); setSoloAlertas(false); }, activeCls: 'bg-slate-900 border-slate-700 text-white', valueCls: 'text-white' },
+          { label: 'Pendientes', value: stats.pendientes, active: estadoFilter === 'Pendiente' && !soloAlertas, onClick: () => { setEstadoFilter('Pendiente'); setSoloAlertas(false); }, activeCls: 'bg-amber-50 border-amber-200 text-amber-800', valueCls: 'text-amber-900' },
+          { label: 'En Proceso', value: stats.enProceso, active: estadoFilter === 'En Proceso' && !soloAlertas, onClick: () => { setEstadoFilter('En Proceso'); setSoloAlertas(false); }, activeCls: 'bg-sky-50 border-sky-200 text-sky-800', valueCls: 'text-sky-900' },
+          { label: 'Finalizadas', value: stats.finalizadas, active: estadoFilter === 'Finalizado' && !soloAlertas, onClick: () => { setEstadoFilter('Finalizado'); setSoloAlertas(false); }, activeCls: 'bg-emerald-50 border-emerald-200 text-emerald-800', valueCls: 'text-emerald-900' },
+        ].map((kpi) => (
+          <button
+            key={kpi.label}
+            onClick={kpi.onClick}
+            className={`p-3 rounded-lg border text-left transition-all duration-150 ${
+              kpi.active
+                ? kpi.activeCls
+                : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs'
+            }`}
+          >
+            <p className="text-xs font-bold uppercase tracking-wider">{kpi.label}</p>
+            <p className={`text-xl font-bold mt-0.5 tabular-nums ${kpi.active ? kpi.valueCls : 'text-slate-900'}`}>{kpi.value}</p>
+          </button>
+        ))}
 
         <button
-          onClick={() => {
-            setEstadoFilter('Pendiente');
-            setSoloAlertas(false);
-          }}
-          className={`p-3 rounded-xl border text-left transition-all ${
-            estadoFilter === 'Pendiente' && !soloAlertas
-              ? 'bg-amber-600/15 border-amber-500/40 text-amber-400'
-              : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+          onClick={() => { setSoloAlertas(!soloAlertas); if (!soloAlertas) setEstadoFilter(''); }}
+          className={`col-span-2 sm:col-span-1 p-3 rounded-lg border text-left transition-all duration-150 ${
+            soloAlertas
+              ? 'bg-rose-50 border-rose-300 text-rose-800'
+              : stats.alertas > 0
+              ? 'bg-rose-50 border-rose-200 text-rose-700'
+              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 border-slate-300'
           }`}
         >
-          <p className="text-[11px] font-semibold uppercase tracking-wider">Pendientes</p>
-          <p className="text-xl font-bold text-amber-300 mt-0.5">{stats.pendientes}</p>
-        </button>
-
-        <button
-          onClick={() => {
-            setEstadoFilter('En Proceso');
-            setSoloAlertas(false);
-          }}
-          className={`p-3 rounded-xl border text-left transition-all ${
-            estadoFilter === 'En Proceso' && !soloAlertas
-              ? 'bg-blue-600/15 border-blue-500/40 text-blue-400'
-              : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-          }`}
-        >
-          <p className="text-[11px] font-semibold uppercase tracking-wider">En Proceso</p>
-          <p className="text-xl font-bold text-blue-300 mt-0.5">{stats.enProceso}</p>
-        </button>
-
-        <button
-          onClick={() => {
-            setEstadoFilter('Finalizado');
-            setSoloAlertas(false);
-          }}
-          className={`p-3 rounded-xl border text-left transition-all ${
-            estadoFilter === 'Finalizado' && !soloAlertas
-              ? 'bg-emerald-600/15 border-emerald-500/40 text-emerald-400'
-              : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-          }`}
-        >
-          <p className="text-[11px] font-semibold uppercase tracking-wider">Finalizadas</p>
-          <p className="text-xl font-bold text-emerald-300 mt-0.5">{stats.finalizadas}</p>
-        </button>
-
-        <button
-          onClick={() => {
-            setSoloAlertas(!soloAlertas);
-            if (!soloAlertas) setEstadoFilter('');
-          }}
-          className={`col-span-2 sm:col-span-1 p-3 rounded-xl border text-left transition-all ${
-            soloAlertas || stats.alertas > 0
-              ? 'bg-red-950/40 border-red-800/80 text-red-400 animate-pulse'
-              : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-bold uppercase tracking-wider flex items-center space-x-1">
-              <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
-              <span>+5 Días Inactiva</span>
-            </p>
+          <div className="flex items-center space-x-1.5">
+            {stats.alertas > 0 && <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />}
+            <p className="text-xs font-bold uppercase tracking-wider">+5 Días Inactiva</p>
           </div>
-          <p className="text-xl font-bold text-red-300 mt-0.5">{stats.alertas}</p>
+          <p className={`text-xl font-bold mt-0.5 tabular-nums ${stats.alertas > 0 ? 'text-rose-800' : 'text-slate-900'}`}>{stats.alertas}</p>
         </button>
       </div>
 
-      {/* ── Filter & Search Bar ────────────────────────────────────────────── */}
-      <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
-        <div className="flex flex-col md:flex-row items-center gap-3">
-          {/* Predictive Search */}
+      {/* Filter & Search Bar */}
+      <div className="p-3 bg-white border border-slate-200 rounded-lg shadow-sm space-y-2.5">
+        <div className="flex flex-col md:flex-row items-center gap-2.5">
           <div className="relative flex-1 w-full">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por UF (ej: 'Sec 28', 'Local 3', 'UF 150'), N° OT, problema o responsable..."
-              className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+              placeholder="Buscar por UF, N° OT, problema o responsable..."
+              className="w-full pl-9 pr-8 h-9 bg-white border border-slate-300 rounded-md text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
             />
             {search && (
-              <button
-                onClick={() => setSearch('')}
-                className="absolute right-3 top-2.5 text-slate-500 hover:text-white text-xs"
-              >
-                ✕
+              <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-          {/* Rubro Selector */}
           <select
             value={rubroFilter}
             onChange={(e) => setRubroFilter(e.target.value)}
-            className="w-full md:w-48 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500"
+            className="w-full md:w-44 px-3 h-9 bg-white border border-slate-300 rounded-md text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
           >
             <option value="">Todos los Rubros</option>
             {rubros.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.nombre}
-              </option>
+              <option key={r.id} value={r.id}>{r.nombre}</option>
             ))}
           </select>
 
-          {/* Responsable Selector */}
           <select
             value={responsableFilter}
             onChange={(e) => setResponsableFilter(e.target.value)}
-            className="w-full md:w-48 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500"
+            className="w-full md:w-44 px-3 h-9 bg-white border border-slate-300 rounded-md text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
           >
             <option value="">Todos los Responsables</option>
             {responsables.map((resp) => (
-              <option key={resp.id} value={resp.id}>
-                {resp.nombre}
-              </option>
+              <option key={resp.id} value={resp.id}>{resp.nombre}</option>
             ))}
           </select>
         </div>
 
-        {/* State Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pt-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto">
           {['', 'Pendiente', 'En Proceso', 'Finalizado', 'Suspendido', 'Cancelado'].map((st) => (
             <button
               key={st}
-              onClick={() => {
-                setEstadoFilter(st);
-                setSoloAlertas(false);
-              }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
+              onClick={() => { setEstadoFilter(st); setSoloAlertas(false); }}
+              className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 ${
                 estadoFilter === st && !soloAlertas
-                  ? 'bg-blue-600 text-white shadow'
-                  : 'bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                  ? st === '' ? 'bg-slate-900 text-white' : `${estadoBadge(st || 'Pendiente')} font-bold`
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 font-semibold border border-slate-200'
               }`}
             >
-              {st === '' ? 'Todos los Estados' : st}
+              {st === '' ? 'Todos' : st}
             </button>
           ))}
         </div>
       </div>
 
-      {/* ── Cards Grid Mobile-First (Vertical Cards) ───────────────────────── */}
+      {/* Cards Grid */}
       {isLoading ? (
-        <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center space-y-3">
-          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm">Cargando órdenes de trabajo...</p>
+        <div className="p-12 text-center flex flex-col items-center justify-center space-y-3">
+          <div className="w-6 h-6 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-slate-400">Cargando órdenes de trabajo...</p>
         </div>
       ) : ordenes.length === 0 ? (
-        <div className="p-12 text-center bg-slate-950 border border-slate-800 rounded-xl">
-          <ClipboardList className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-          <p className="text-base font-semibold text-slate-300">No se encontraron órdenes de trabajo</p>
-          <p className="text-xs text-slate-500 mt-1">Pruebe ajustando los filtros de búsqueda o cree una nueva OT.</p>
+        <div className="p-12 text-center bg-white border border-slate-200 rounded-lg shadow-xs">
+          <ClipboardList className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+          <p className="text-base font-semibold text-slate-600">No se encontraron órdenes de trabajo</p>
+          <p className="text-xs text-slate-400 mt-1">Pruebe ajustando los filtros de búsqueda o cree una nueva OT.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {ordenes.map((ot) => {
             const isAlert = ot.esAlertaInactividad;
             return (
               <div
                 key={ot.idOt}
-                className={`rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 shadow-xl ${
+                className={`rounded-lg flex flex-col justify-between transition-all duration-150 shadow-xs ${
                   isAlert
-                    ? 'bg-red-950/20 border-2 border-red-700/80 shadow-red-950/30 ring-1 ring-red-600/30'
-                    : 'bg-slate-950 border border-slate-800/90 hover:border-slate-700'
+                    ? 'bg-rose-50/70 border border-rose-300 border-l-4 border-l-rose-600 shadow-xs'
+                    : 'bg-white border border-slate-300 hover:border-slate-400 hover:shadow-md transition-all'
                 }`}
               >
-                <div>
+                <div className="p-4">
                   {/* Card Header: OT Id & State & Inactivity Alert */}
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div>
-                      <span className="font-mono font-bold text-blue-400 text-sm tracking-wider">
+                      <span className="font-mono font-bold text-slate-900 text-sm tracking-tight">
                         {ot.numeroOT}
                       </span>
-                      <p className="text-[10px] text-slate-500 mt-0.5">
-                        {format(new Date(ot.createdAt), 'dd/MM/yyyy HH:mm')}
+                      <p className="text-xs text-slate-500 font-medium mt-0.5">
+                        {formatDistanceToNow(new Date(ot.createdAt), { addSuffix: true, locale: es })}
                       </p>
                     </div>
 
-                    <div className="flex flex-col items-end gap-1">
-                      <span
-                        className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                          ot.estado === 'Finalizado'
-                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                            : ot.estado === 'En Proceso'
-                            ? 'bg-blue-950 text-blue-400 border border-blue-800'
-                            : ot.estado === 'Suspendido'
-                            ? 'bg-purple-950 text-purple-400 border border-purple-800'
-                            : ot.estado === 'Cancelado'
-                            ? 'bg-slate-900 text-slate-400 border border-slate-700'
-                            : 'bg-amber-950 text-amber-400 border border-amber-800'
-                        }`}
-                      >
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${estadoBadge(ot.estado)}`}>
                         {ot.estado}
                       </span>
 
                       {isAlert && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-red-600 text-white shadow-sm flex items-center space-x-1 animate-bounce">
-                          <AlertTriangle className="w-3 h-3" />
-                          <span>ALERTA: +{ot.diasPendiente} DÍAS PENDIENTE</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-rose-50 text-rose-700 border border-rose-200 flex items-center space-x-1">
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" />
+                          <span>+{ot.diasPendiente}d sin actividad</span>
                         </span>
                       )}
                     </div>
                   </div>
 
                   {/* Unidad Funcional (Clickable to open Critical History) */}
-                  <div className="mb-3">
-                    <button
-                      onClick={() => openHistorialModal(ot.unidadFuncionalId)}
-                      title="Ver Historial Crítico de esta Unidad Funcional"
-                      className="w-full text-left p-2.5 bg-slate-900/80 hover:bg-blue-950/40 border border-slate-800 hover:border-blue-500/50 rounded-xl transition-all group"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2 overflow-hidden">
-                          <MapPin className="w-4 h-4 text-blue-400 shrink-0 group-hover:scale-110 transition-transform" />
-                          <span className="text-xs font-bold text-slate-100 group-hover:text-blue-300 truncate">
-                            {ot.unidadFuncionalDisplay}
-                          </span>
-                        </div>
-                        <History className="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-400 shrink-0 ml-2" />
+                  <button
+                    onClick={() => openHistorialModal(ot.unidadFuncionalId)}
+                    title="Ver Historial Crítico de esta Unidad Funcional"
+                    className="w-full text-left p-2 bg-slate-50 hover:bg-orange-50 border border-slate-200 hover:border-orange-200/60 rounded-md transition-all duration-150 group mb-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-1.5 overflow-hidden">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 group-hover:text-orange-500 shrink-0 transition-colors" />
+                        <span className="text-xs font-bold text-slate-900 group-hover:text-orange-700 truncate transition-colors">
+                          {ot.unidadFuncionalDisplay}
+                        </span>
                       </div>
-                    </button>
-                  </div>
+                      <History className="w-3.5 h-3.5 text-slate-300 group-hover:text-orange-500 shrink-0 ml-2 transition-colors" />
+                    </div>
+                  </button>
 
                   {/* Rubro & Responsable Badges */}
-                  <div className="flex flex-wrap items-center gap-2 mb-3">
-                    <span className="inline-flex items-center space-x-1 px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-[11px] font-semibold text-slate-300">
-                      <Wrench className="w-3 h-3 text-amber-400" />
+                  <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                    <span className="inline-flex items-center space-x-1 px-2 py-0.5 bg-slate-100 border border-slate-300 rounded-md text-xs font-semibold text-slate-700">
+                      <Wrench className="w-3 h-3 text-slate-400" />
                       <span>{ot.categoriaNombre}</span>
                     </span>
 
-                    <span className="inline-flex items-center space-x-1 px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-[11px] font-semibold text-slate-300">
-                      <User className="w-3 h-3 text-blue-400" />
+                    <span className="inline-flex items-center space-x-1 px-2 py-0.5 bg-slate-100 border border-slate-300 rounded-md text-xs font-semibold text-slate-700">
+                      <User className="w-3 h-3 text-slate-400" />
                       <span>{ot.responsableNombre}</span>
                     </span>
                   </div>
 
                   {/* Problema Reportado */}
                   <div className="mb-3">
-                    <p className="text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">
-                      Problema Reportado:
+                    <p className="text-xs font-bold text-slate-600 mb-1 uppercase tracking-wider">
+                      Problema Reportado
                     </p>
-                    <p className="text-xs text-slate-200 line-clamp-3 bg-slate-900/40 p-2 rounded-lg border border-slate-800/60">
+                    <p className="text-xs text-slate-800 line-clamp-3 bg-slate-50/80 p-2.5 rounded-md border border-slate-200 leading-relaxed">
                       {ot.problemaReportado}
                     </p>
                   </div>
 
                   {/* Solución Realizada (if finalized) */}
                   {ot.solucionRealizada && (
-                    <div className="mb-3 p-2.5 bg-emerald-950/30 border border-emerald-900/60 rounded-xl text-xs">
-                      <p className="text-[11px] font-bold text-emerald-400 flex items-center space-x-1 mb-0.5">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Solución Realizada:</span>
+                    <div className="mb-3 p-2 bg-emerald-50 border border-emerald-300 rounded-md">
+                      <p className="text-[10px] font-semibold text-emerald-700 flex items-center space-x-1 mb-0.5">
+                        <CheckCircle2 className="w-3 h-3" />
+                        <span>Solución Realizada</span>
                       </p>
-                      <p className="text-slate-200 text-xs line-clamp-2">{ot.solucionRealizada}</p>
+                      <p className="text-emerald-800 text-xs line-clamp-2">{ot.solucionRealizada}</p>
                     </div>
                   )}
 
                   {/* Insumos Consumidos de Pañol Badge */}
                   {ot.insumosConsumidos && ot.insumosConsumidos.length > 0 && (
-                    <div className="mb-3 p-2 bg-amber-950/20 border border-amber-900/40 rounded-xl text-xs flex items-center justify-between">
-                      <div className="flex items-center space-x-1.5 text-amber-300 font-semibold text-[11px]">
-                        <Package className="w-3.5 h-3.5 text-amber-400" />
+                    <div className="mb-3 p-2 bg-amber-50 border border-amber-300 rounded-md flex items-center justify-between">
+                      <div className="flex items-center space-x-1.5 text-amber-900 text-xs font-bold">
+                        <Package className="w-3 h-3 text-amber-600" />
                         <span>
                           {ot.insumosConsumidos.length}{' '}
                           {ot.insumosConsumidos.length === 1 ? 'insumo consumido' : 'insumos consumidos'}
                         </span>
                       </div>
-                      <span className="text-[10px] text-slate-400 italic">Pañol</span>
+                      <span className="text-[10px] text-amber-600 font-medium">Pañol</span>
                     </div>
                   )}
                 </div>
 
                 {/* Card Actions & Footer */}
-                <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
-                  {/* State Select */}
+                <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-2">
                   <select
                     value={ot.estado}
                     onChange={(e) => handleQuickStatusChange(ot, e.target.value)}
-                    className="px-2.5 py-1 bg-slate-900 border border-slate-700 hover:border-slate-600 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500 font-medium"
+                    className="px-2 py-1 bg-white border border-slate-300 hover:border-slate-400 rounded-md text-slate-800 text-xs focus:outline-none focus:ring-1 focus:ring-slate-900/10 font-semibold transition-colors"
                   >
                     <option value="Pendiente">Pendiente</option>
                     <option value="En Proceso">En Proceso</option>
@@ -656,26 +611,25 @@ export const OrdenesPage: React.FC = () => {
                     <option value="Cancelado">Cancelado</option>
                   </select>
 
-                  {/* Action Buttons */}
                   <div className="flex items-center space-x-1">
                     <button
                       onClick={() => openDetalleModal(ot)}
                       title="Ver Bitácora y Detalle Completo"
-                      className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-900 rounded-lg transition-colors"
+                      className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors"
                     >
                       <Info className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => openEditModal(ot)}
                       title="Editar OT"
-                      className="p-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-950/40 rounded-lg transition-colors"
+                      className="p-1.5 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-md transition-colors"
                     >
                       <Edit3 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => openDeleteModal(ot)}
                       title="Eliminar OT (Protocolo RF04)"
-                      className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-950/40 rounded-lg transition-colors"
+                      className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -687,52 +641,48 @@ export const OrdenesPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── Floating Action Button (FAB) Mobile-First ──────────────────────── */}
+      {/* Floating Action Button (FAB) */}
       <button
         onClick={openCreateModal}
         title="Crear Nueva Orden de Trabajo"
-        className="fixed bottom-6 right-6 z-40 p-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-2xl shadow-blue-600/50 hover:scale-110 active:scale-95 transition-all flex items-center justify-center group"
+        className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-orange-600 hover:bg-orange-700 text-white rounded-full shadow-lg shadow-orange-600/25 hover:scale-105 active:scale-[0.97] transition-all duration-150 flex items-center justify-center"
       >
-        <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-200" />
+        <Plus className="w-6 h-6" />
       </button>
 
-      {/* ── Modal 1: Alta Rápida con Cascada Dinámica (RF01) ───────────────── */}
+      {/* Modal 1: Alta Rápida con Cascada Dinámica */}
       {createModalOpen && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl p-6 shadow-2xl my-8">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-blue-600/20 border border-blue-500/30 rounded-xl text-blue-400">
-                  <ClipboardList className="w-5 h-5" />
+        <div className={modalOverlayCls}>
+          <div className={`${modalCls} max-w-xl`}>
+            <div className={modalHeaderCls}>
+              <div className="flex items-center space-x-2.5">
+                <div className="p-1.5 bg-orange-50 rounded-md">
+                  <ClipboardList className="w-4 h-4 text-orange-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">Alta Rápida de Orden de Trabajo</h3>
-                  <p className="text-xs text-slate-400">Selector dinámico por Unidad Funcional (&lt;30 seg)</p>
+                  <h3 className="text-base font-semibold text-slate-900">Alta Rápida de Orden de Trabajo</h3>
+                  <p className="text-xs text-slate-500">Selector dinámico por Unidad Funcional (&lt;30 seg)</p>
                 </div>
               </div>
-              <button onClick={closeCreateModal} className="text-slate-400 hover:text-white p-1 rounded-lg">
+              <button onClick={closeCreateModal} className={modalCloseBtn}>
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="space-y-4 text-xs">
-              {/* Cascada Dinámica: Sector -> Piso -> Depto */}
-              <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
-                <p className="font-bold text-slate-200 flex items-center space-x-1.5">
-                  <Layers className="w-4 h-4 text-blue-400" />
+            <form onSubmit={handleCreateSubmit} className="px-6 py-4 space-y-4">
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+                <p className="text-xs font-semibold text-slate-700 flex items-center space-x-1.5">
+                  <Layers className="w-3.5 h-3.5 text-orange-600" />
                   <span>Selección de Unidad Funcional (3 Niveles)</span>
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {/* Nivel 1: Sector / Escalera */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   <div>
-                    <label className="block text-slate-400 font-semibold mb-1">
-                      1. Sector / Escalera *
-                    </label>
+                    <label className={labelCls}>1. Sector / Escalera *</label>
                     <select
                       value={sectorSelected}
                       onChange={(e) => handleSectorChange(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500 font-semibold"
+                      className={selectCls}
                       required
                     >
                       <option value="">Seleccione Sector...</option>
@@ -744,16 +694,13 @@ export const OrdenesPage: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Nivel 2: Piso o Nº Local */}
                   <div>
-                    <label className="block text-slate-400 font-semibold mb-1">
-                      {isLocal ? '2. Nº Local *' : '2. Piso *'}
-                    </label>
+                    <label className={labelCls}>{isLocal ? '2. Nº Local *' : '2. Piso *'}</label>
                     <select
                       value={pisoSelected}
                       onChange={(e) => handlePisoChange(e.target.value)}
                       disabled={!sectorSelected}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 disabled:opacity-40 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500 font-semibold"
+                      className={`${selectCls} disabled:opacity-40 disabled:cursor-not-allowed`}
                       required
                     >
                       <option value="">{isLocal ? 'Seleccione Local...' : 'Seleccione Piso...'}</option>
@@ -765,16 +712,13 @@ export const OrdenesPage: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Nivel 3: Depto (Deshabilitado si es Local) */}
                   <div>
-                    <label className="block text-slate-400 font-semibold mb-1">
-                      3. Depto {isLocal ? '(No aplica)' : '*'}
-                    </label>
+                    <label className={labelCls}>3. Depto {isLocal ? '(N/A)' : '*'}</label>
                     <select
                       value={deptoSelected}
                       onChange={(e) => handleDeptoChange(e.target.value)}
                       disabled={isLocal || !pisoSelected}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 disabled:opacity-40 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500 font-semibold"
+                      className={`${selectCls} disabled:opacity-40 disabled:cursor-not-allowed`}
                       required={!isLocal}
                     >
                       <option value="">{isLocal ? 'N/A (Local)' : 'Seleccione Depto...'}</option>
@@ -787,103 +731,84 @@ export const OrdenesPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Confirmed UF Resolution Banner */}
                 {ufFinalId && (
-                  <div className="p-3 bg-emerald-950/40 border border-emerald-800/80 rounded-xl flex items-center justify-between">
+                  <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded-md flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <Check className="w-4 h-4 text-emerald-400" />
-                      <span className="text-xs font-bold text-emerald-300">
+                      <Check className="w-4 h-4 text-emerald-600" />
+                      <span className="text-xs font-semibold text-emerald-800">
                         {isLocal
                           ? `LOCAL Nº ${pisoSelected} (UF #${ufFinalId})`
-                          : `UF #${ufFinalId} (Sec ${sectorSelected} - ${pisoSelected} "${deptoSelected}")`}
+                          : `UF #${ufFinalId} — Sec ${sectorSelected}, ${pisoSelected}, Depto "${deptoSelected}"`}
                       </span>
                     </div>
-                    <span className="text-[10px] text-emerald-400 uppercase font-semibold">Confirmada</span>
+                    <span className="text-[10px] text-emerald-600 font-semibold uppercase">Confirmada</span>
                   </div>
                 )}
               </div>
 
-              {/* Rubro & Responsable */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Rubro / Categoría *</label>
+                  <label className={labelCls}>Rubro / Categoría *</label>
                   <select
                     value={createCategoriaId}
                     onChange={(e) => setCreateCategoriaId(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500"
+                    className={selectCls}
                     required
                   >
-                    <option value="" disabled>
-                      Seleccione rubro...
-                    </option>
+                    <option value="" disabled>Seleccione rubro...</option>
                     {rubros.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.nombre}
-                      </option>
+                      <option key={r.id} value={r.id}>{r.nombre}</option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Responsable Asignado *</label>
+                  <label className={labelCls}>Responsable Asignado *</label>
                   <select
                     value={createResponsableId}
                     onChange={(e) => setCreateResponsableId(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500"
+                    className={selectCls}
                     required
                   >
-                    <option value="" disabled>
-                      Seleccione responsable...
-                    </option>
+                    <option value="" disabled>Seleccione responsable...</option>
                     {responsables.map((resp) => (
-                      <option key={resp.id} value={resp.id}>
-                        {resp.nombre}
-                      </option>
+                      <option key={resp.id} value={resp.id}>{resp.nombre}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {/* Problema Reportado */}
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">
-                  Problema Reportado / Detalle del Incidente *
-                </label>
+                <label className={labelCls}>Problema Reportado / Detalle del Incidente *</label>
                 <textarea
                   value={createProblema}
                   onChange={(e) => setCreateProblema(e.target.value)}
                   placeholder="Describa con precisión el problema detectado o reportado..."
                   rows={3}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
                   required
                 />
               </div>
 
-              {/* Observaciones */}
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Observaciones Adicionales</label>
+                <label className={labelCls}>Observaciones Adicionales</label>
                 <textarea
                   value={createObservaciones}
                   onChange={(e) => setCreateObservaciones(e.target.value)}
                   placeholder="Información sobre turnos, llaves, prioridad o morador..."
                   rows={2}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
                 />
               </div>
 
-              {/* Actions */}
-              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={closeCreateModal}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold text-xs"
-                >
+              <div className="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+                <button type="button" onClick={closeCreateModal} className={btnSecondary}>
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={createMutation.isPending || !ufFinalId}
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl font-semibold text-xs shadow-lg shadow-blue-600/30"
+                  className={btnPrimary}
                 >
                   {createMutation.isPending ? 'Guardando...' : 'Crear Orden de Trabajo'}
                 </button>
@@ -893,79 +818,53 @@ export const OrdenesPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── Modal 2: Edición de OT con UF Bloqueada/Inmutable (RF02) ────────── */}
+      {/* Modal 2: Edición de OT con UF Bloqueada */}
       {editModalOpen && selectedOt && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl p-6 shadow-2xl my-8">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+        <div className={modalOverlayCls}>
+          <div className={`${modalCls} max-w-xl`}>
+            <div className={modalHeaderCls}>
               <div>
-                <h3 className="text-lg font-bold text-white flex items-center space-x-2">
-                  <Edit3 className="w-5 h-5 text-blue-400" />
+                <h3 className="text-base font-semibold text-slate-900 flex items-center space-x-2">
+                  <Edit3 className="w-4 h-4 text-orange-600" />
                   <span>Editar {selectedOt.numeroOT}</span>
                 </h3>
-                <p className="text-xs text-slate-400">La Unidad Funcional original permanece inmutable.</p>
+                <p className="text-xs text-slate-500 mt-0.5">La Unidad Funcional original permanece inmutable.</p>
               </div>
-              <button onClick={() => setEditModalOpen(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setEditModalOpen(false)} className={modalCloseBtn}>
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleEditSubmit} className="space-y-4 text-xs">
-              {/* UF Inmutable Display */}
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
+            <form onSubmit={handleEditSubmit} className="px-6 py-4 space-y-4">
+              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-md flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] text-slate-500 uppercase font-semibold">Unidad Funcional (Bloqueada)</p>
-                  <p className="text-sm font-bold text-slate-200 mt-0.5">{selectedOt.unidadFuncionalDisplay}</p>
+                  <p className="text-[10px] text-slate-400 uppercase font-semibold">Unidad Funcional (Bloqueada)</p>
+                  <p className="text-sm font-semibold text-slate-800 mt-0.5">{selectedOt.unidadFuncionalDisplay}</p>
                 </div>
-                <span className="px-2.5 py-1 bg-slate-900 text-slate-400 text-[10px] rounded-lg border border-slate-800">
+                <span className="px-2 py-1 bg-slate-100 text-slate-400 text-[10px] rounded-md border border-slate-200 font-medium">
                   🔒 Inmutable
                 </span>
               </div>
 
-              {/* Rubro & Responsable */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Rubro / Categoría *</label>
-                  <select
-                    value={editCategoriaId}
-                    onChange={(e) => setEditCategoriaId(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500"
-                    required
-                  >
-                    {rubros.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.nombre}
-                      </option>
-                    ))}
+                  <label className={labelCls}>Rubro / Categoría *</label>
+                  <select value={editCategoriaId} onChange={(e) => setEditCategoriaId(e.target.value)} className={selectCls} required>
+                    {rubros.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Responsable Asignado *</label>
-                  <select
-                    value={editResponsableId}
-                    onChange={(e) => setEditResponsableId(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500"
-                    required
-                  >
-                    {responsables.map((resp) => (
-                      <option key={resp.id} value={resp.id}>
-                        {resp.nombre}
-                      </option>
-                    ))}
+                  <label className={labelCls}>Responsable Asignado *</label>
+                  <select value={editResponsableId} onChange={(e) => setEditResponsableId(e.target.value)} className={selectCls} required>
+                    {responsables.map((resp) => <option key={resp.id} value={resp.id}>{resp.nombre}</option>)}
                   </select>
                 </div>
               </div>
 
-              {/* Estado */}
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Estado de la OT *</label>
-                <select
-                  value={editEstado}
-                  onChange={(e) => setEditEstado(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500 font-bold"
-                  required
-                >
+                <label className={labelCls}>Estado de la OT *</label>
+                <select value={editEstado} onChange={(e) => setEditEstado(e.target.value)} className={`${selectCls} font-semibold`} required>
                   <option value="Pendiente">Pendiente</option>
                   <option value="En Proceso">En Proceso</option>
                   <option value="Finalizado">Finalizado (Requiere Solución)</option>
@@ -974,21 +873,19 @@ export const OrdenesPage: React.FC = () => {
                 </select>
               </div>
 
-              {/* Problema Reportado */}
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Problema Reportado *</label>
+                <label className={labelCls}>Problema Reportado *</label>
                 <textarea
                   value={editProblema}
                   onChange={(e) => setEditProblema(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
                   required
                 />
               </div>
 
-              {/* Solución Realizada (Required if Finalizado) */}
-              <div className={editEstado === 'Finalizado' ? 'p-3 bg-emerald-950/20 border border-emerald-800/80 rounded-xl' : ''}>
-                <label className="block text-slate-300 font-semibold mb-1 flex items-center justify-between">
+              <div className={editEstado === 'Finalizado' ? 'p-3 bg-emerald-50 border border-emerald-300 rounded-md' : ''}>
+                <label className={`${labelCls} flex items-center justify-between`}>
                   <span>Solución Realizada {editEstado === 'Finalizado' ? '(OBLIGATORIA PARA FINALIZAR) *' : '(Opcional)'}</span>
                 </label>
                 <textarea
@@ -996,36 +893,26 @@ export const OrdenesPage: React.FC = () => {
                   onChange={(e) => setEditSolucion(e.target.value)}
                   placeholder="Detalle los trabajos efectuados y materiales reemplazados..."
                   rows={3}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500"
+                  className={`w-full px-3 py-2 bg-white border rounded-md text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 transition-all ${editEstado === 'Finalizado' ? 'border-emerald-300 focus:border-emerald-500' : 'border-slate-300 focus:border-slate-900'}`}
                   required={editEstado === 'Finalizado'}
                 />
               </div>
 
-              {/* Observaciones */}
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Observaciones</label>
+                <label className={labelCls}>Observaciones</label>
                 <textarea
                   value={editObservaciones}
                   onChange={(e) => setEditObservaciones(e.target.value)}
                   rows={2}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
                 />
               </div>
 
-              {/* Actions */}
-              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setEditModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold text-xs"
-                >
+              <div className="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+                <button type="button" onClick={() => setEditModalOpen(false)} className={btnSecondary}>
                   Cancelar
                 </button>
-                <button
-                  type="submit"
-                  disabled={updateMutation.isPending}
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold text-xs shadow-lg shadow-blue-600/30"
-                >
+                <button type="submit" disabled={updateMutation.isPending} className={btnPrimary}>
                   {updateMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
                 </button>
               </div>
@@ -1034,46 +921,43 @@ export const OrdenesPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── Modal 3: Quick Status Change to Finalizado ─────────────────────── */}
+      {/* Modal 3: Quick Status Change to Finalizado */}
       {quickStatusModalOpen && selectedOt && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-              <h3 className="text-lg font-bold text-white flex items-center space-x-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                <span>Finalizar {selectedOt.numeroOT}</span>
-              </h3>
-              <button onClick={() => setQuickStatusModalOpen(false)} className="text-slate-400 hover:text-white">
+        <div className={modalOverlayCls}>
+          <div className={`${modalCls} max-w-lg`}>
+            <div className={modalHeaderCls}>
+              <div className="flex items-center space-x-2.5">
+                <div className="p-1.5 bg-emerald-50 rounded-md">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                </div>
+                <h3 className="text-base font-semibold text-slate-900">Finalizar {selectedOt.numeroOT}</h3>
+              </div>
+              <button onClick={() => setQuickStatusModalOpen(false)} className={modalCloseBtn}>
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-4 text-xs">
-              <p className="text-slate-300">
-                Para completar y cerrar la orden en <span className="font-bold text-white">{selectedOt.unidadFuncionalDisplay}</span>,
+            <div className="px-6 py-4 space-y-4">
+              <p className="text-sm text-slate-600">
+                Para completar y cerrar la orden en{' '}
+                <span className="font-semibold text-slate-900">{selectedOt.unidadFuncionalDisplay}</span>,
                 es obligatorio detallar la solución realizada.
               </p>
 
               <div>
-                <label className="block text-slate-200 font-semibold mb-1">
-                  Solución Realizada y Pruebas Efectuadas *
-                </label>
+                <label className={labelCls}>Solución Realizada y Pruebas Efectuadas *</label>
                 <textarea
                   value={quickStatusSolucion}
                   onChange={(e) => setQuickStatusSolucion(e.target.value)}
                   placeholder="Ej: Se reparó cañería con termofusión y se verificó estanqueidad..."
                   rows={4}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                   required
                 />
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setQuickStatusModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold"
-                >
+              <div className="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+                <button type="button" onClick={() => setQuickStatusModalOpen(false)} className={btnSecondary}>
                   Cancelar
                 </button>
                 <button
@@ -1090,7 +974,7 @@ export const OrdenesPage: React.FC = () => {
                     });
                   }}
                   disabled={changeEstadoMutation.isPending}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold shadow-lg shadow-emerald-600/30"
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-md text-sm font-semibold shadow-xs transition-all duration-150 active:scale-[0.99]"
                 >
                   {changeEstadoMutation.isPending ? 'Guardando...' : 'Confirmar Cierre'}
                 </button>
@@ -1100,125 +984,125 @@ export const OrdenesPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── Modal 4: Historial Crítico por UF (RF05 & RF06) ────────────────── */}
+      {/* Modal 4: Historial Crítico por UF */}
       {historialModalOpen && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl p-6 shadow-2xl my-8 max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4 shrink-0">
+        <div className={modalOverlayCls}>
+          <div className={`${modalCls} max-w-3xl max-h-[90vh] flex flex-col`}>
+            <div className={`${modalHeaderCls} shrink-0`}>
               <div className="flex items-center space-x-2.5">
-                <div className="p-2 bg-blue-600/20 border border-blue-500/30 rounded-xl text-blue-400">
-                  <History className="w-5 h-5" />
+                <div className="p-1.5 bg-orange-50 rounded-md">
+                  <History className="w-4 h-4 text-orange-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">Historial Crítico de Reclamos por UF</h3>
-                  <p className="text-xs text-slate-400">
+                  <h3 className="text-base font-semibold text-slate-900">Historial Crítico de Reclamos por UF</h3>
+                  <p className="text-xs text-slate-500">
                     {historialUf?.unidadFuncional.displayNombre || 'Cargando información...'}
                   </p>
                 </div>
               </div>
-              <button onClick={() => setHistorialModalOpen(false)} className="text-slate-400 hover:text-white p-1 rounded-lg">
+              <button onClick={() => setHistorialModalOpen(false)} className={modalCloseBtn}>
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="overflow-y-auto space-y-4 pr-1 flex-1 text-xs">
+            <div className="overflow-y-auto flex-1 px-6 py-4">
               {isLoadingHistorial ? (
-                <div className="p-8 text-center text-slate-400">Cargando historial crítico...</div>
+                <div className="p-8 text-center text-slate-400 text-sm">Cargando historial crítico...</div>
               ) : !historialUf || historialUf.reclamos.length === 0 ? (
-                <div className="p-8 text-center bg-slate-950 border border-slate-800 rounded-xl text-slate-400">
+                <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-lg text-slate-400 text-sm">
                   No hay reclamos históricos registrados para esta Unidad Funcional.
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
-                    <span className="font-semibold text-slate-300">
-                      Total de Reclamos Registrados: <span className="font-bold text-white">{historialUf.totalReclamos}</span>
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-md flex items-center justify-between text-xs">
+                    <span className="font-medium text-slate-700">
+                      Total de reclamos: <span className="font-bold text-slate-900">{historialUf.totalReclamos}</span>
                     </span>
-                    <span className="text-[11px] text-slate-500">Orden cronológico descendente</span>
+                    <span className="text-slate-400">Orden cronológico descendente</span>
                   </div>
 
-                  {historialUf.reclamos.map((rec) => (
-                    <div
-                      key={rec.idOt}
-                      className="p-4 bg-slate-950 border border-slate-800/90 rounded-xl space-y-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-mono font-bold text-blue-400 text-sm">{rec.numeroOT}</span>
-                          <span className="text-slate-400 text-xs">• Rubro: {rec.categoriaNombre}</span>
-                        </div>
-                        <span
-                          className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                            rec.estado === 'Finalizado'
-                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                              : rec.estado === 'En Proceso'
-                              ? 'bg-blue-950 text-blue-400 border border-blue-800'
-                              : 'bg-amber-950 text-amber-400 border border-amber-800'
-                          }`}
-                        >
-                          {rec.estado}
-                        </span>
-                      </div>
+                  {/* Timeline vertical */}
+                  <div className="relative">
+                    <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-slate-200" />
 
-                      <div>
-                        <p className="font-semibold text-slate-400 text-[11px] uppercase">Problema Reportado:</p>
-                        <p className="text-slate-200 mt-0.5">{rec.problemaReportado}</p>
-                      </div>
+                    <div className="space-y-4">
+                      {historialUf.reclamos.map((rec) => (
+                        <div key={rec.idOt} className="relative pl-8">
+                          <div className={`absolute left-1.5 top-3 w-3 h-3 rounded-full border-2 border-white ${
+                            rec.estado === 'Finalizado' ? 'bg-emerald-500' :
+                            rec.estado === 'En Proceso' ? 'bg-sky-500' :
+                            rec.estado === 'Cancelado' ? 'bg-slate-400' : 'bg-amber-500'
+                          }`} />
 
-                      {rec.solucionRealizada && (
-                        <div className="p-2.5 bg-emerald-950/20 border border-emerald-900/40 rounded-lg">
-                          <p className="font-bold text-emerald-400 text-[11px]">Solución Aplicada:</p>
-                          <p className="text-slate-200 mt-0.5">{rec.solucionRealizada}</p>
-                        </div>
-                      )}
-
-                      {/* Consumos de Pañol en este trabajo */}
-                      {rec.insumosConsumidos && rec.insumosConsumidos.length > 0 ? (
-                        <div className="pt-2 border-t border-slate-800/80">
-                          <p className="font-bold text-amber-400 text-[11px] flex items-center space-x-1.5 mb-2">
-                            <Package className="w-3.5 h-3.5" />
-                            <span>Materiales e Insumos de Pañol Consumidos:</span>
-                          </p>
-                          <div className="space-y-1.5">
-                            {rec.insumosConsumidos.map((ins) => (
-                              <div
-                                key={ins.id}
-                                className="p-2 bg-slate-900/60 border border-slate-800/80 rounded-lg flex items-center justify-between text-[11px]"
-                              >
-                                <div>
-                                  <span className="font-semibold text-slate-200">{ins.articuloNombre}</span>
-                                  {ins.observacion && (
-                                    <span className="text-slate-400 italic ml-2">({ins.observacion})</span>
-                                  )}
-                                </div>
-                                <span className="font-mono font-bold text-amber-300">
-                                  {ins.cantidad} {ins.unidadMedida}
-                                </span>
+                          <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <span className="font-mono font-semibold text-slate-700 text-sm">{rec.numeroOT}</span>
+                                <span className="text-slate-400 text-xs">· {rec.categoriaNombre}</span>
                               </div>
-                            ))}
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${estadoBadge(rec.estado)}`}>
+                                {rec.estado}
+                              </span>
+                            </div>
+
+                            <div>
+                              <p className="text-[10px] font-semibold text-slate-400 uppercase mb-1">Problema Reportado</p>
+                              <p className="text-sm text-slate-700">{rec.problemaReportado}</p>
+                            </div>
+
+                            {rec.solucionRealizada && (
+                              <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded-md">
+                                <p className="text-[10px] font-bold text-emerald-700 mb-1">Solución Aplicada</p>
+                                <p className="text-xs text-emerald-800">{rec.solucionRealizada}</p>
+                              </div>
+                            )}
+
+                            {rec.insumosConsumidos && rec.insumosConsumidos.length > 0 ? (
+                              <div className="border-t border-slate-100 pt-2.5">
+                                <p className="text-[10px] font-semibold text-amber-700 flex items-center space-x-1.5 mb-2 uppercase">
+                                  <Package className="w-3 h-3" />
+                                  <span>Materiales de Pañol Consumidos</span>
+                                </p>
+                                <div className="divide-y divide-slate-100 rounded-md border border-slate-200 overflow-hidden">
+                                  {rec.insumosConsumidos.map((ins) => (
+                                    <div
+                                      key={ins.id}
+                                      className="px-3 py-2 flex items-center justify-between bg-white text-xs"
+                                    >
+                                      <div>
+                                        <span className="font-semibold text-slate-700">{ins.articuloNombre}</span>
+                                        {ins.observacion && (
+                                          <span className="text-slate-400 italic ml-2">({ins.observacion})</span>
+                                        )}
+                                      </div>
+                                      <span className="font-mono font-bold text-amber-700 tabular-nums">
+                                        {ins.cantidad} {ins.unidadMedida}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="text-xs text-slate-400 italic pt-1">
+                                Sin consumo de materiales registrado en pañol para esta orden.
+                              </p>
+                            )}
+
+                            <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-100">
+                              <span>Responsable: {rec.responsableNombre}</span>
+                              <span>{format(new Date(rec.createdAt), 'dd/MM/yyyy HH:mm')}</span>
+                            </div>
                           </div>
                         </div>
-                      ) : (
-                        <p className="text-[11px] text-slate-500 italic pt-1">
-                          Sin consumo de materiales registrado en pañol para esta orden.
-                        </p>
-                      )}
-
-                      <div className="flex items-center justify-between text-[10px] text-slate-500 pt-2 border-t border-slate-800/60">
-                        <span>Responsable: {rec.responsableNombre}</span>
-                        <span>Fecha: {format(new Date(rec.createdAt), 'dd/MM/yyyy HH:mm')}</span>
-                      </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
                 </div>
               )}
             </div>
 
-            <div className="pt-4 border-t border-slate-800 flex justify-end shrink-0">
-              <button
-                onClick={() => setHistorialModalOpen(false)}
-                className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-semibold text-xs"
-              >
+            <div className="px-6 py-4 border-t border-slate-100 flex justify-end shrink-0">
+              <button onClick={() => setHistorialModalOpen(false)} className={btnSecondary}>
                 Cerrar Historial
               </button>
             </div>
@@ -1226,139 +1110,118 @@ export const OrdenesPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── Modal 5: Detalle Completo y Bitácora de Auditoría ──────────────── */}
+      {/* Modal 5: Detalle Completo y Bitácora */}
       {detalleModalOpen && selectedOt && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl my-8 max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4 shrink-0">
+        <div className={modalOverlayCls}>
+          <div className={`${modalCls} max-w-2xl max-h-[90vh] flex flex-col`}>
+            <div className={`${modalHeaderCls} shrink-0`}>
               <div>
-                <h3 className="text-lg font-bold text-white flex items-center space-x-2">
-                  <FileText className="w-5 h-5 text-blue-400" />
+                <h3 className="text-base font-semibold text-slate-900 flex items-center space-x-2">
+                  <FileText className="w-4 h-4 text-slate-500" />
                   <span>Detalle y Bitácora: {selectedOt.numeroOT}</span>
                 </h3>
-                <p className="text-xs text-slate-400">{selectedOt.unidadFuncionalDisplay}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{selectedOt.unidadFuncionalDisplay}</p>
               </div>
-              <button onClick={() => setDetalleModalOpen(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setDetalleModalOpen(false)} className={modalCloseBtn}>
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="overflow-y-auto space-y-4 pr-1 flex-1 text-xs">
-              {/* Info General */}
-              <div className="grid grid-cols-2 gap-3 p-3 bg-slate-950 border border-slate-800 rounded-xl">
+            <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">
                 <div>
-                  <p className="text-[10px] text-slate-500 uppercase font-semibold">Rubro</p>
-                  <p className="font-bold text-slate-200">{selectedOt.categoriaNombre}</p>
+                  <p className="text-[10px] text-slate-400 uppercase font-semibold">Rubro</p>
+                  <p className="font-semibold text-slate-800 mt-0.5">{selectedOt.categoriaNombre}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 uppercase font-semibold">Responsable</p>
-                  <p className="font-bold text-slate-200">{selectedOt.responsableNombre}</p>
+                  <p className="text-[10px] text-slate-400 uppercase font-semibold">Responsable</p>
+                  <p className="font-semibold text-slate-800 mt-0.5">{selectedOt.responsableNombre}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 uppercase font-semibold">Estado Actual</p>
-                  <p className="font-bold text-blue-400">{selectedOt.estado}</p>
+                  <p className="text-[10px] text-slate-400 uppercase font-semibold">Estado Actual</p>
+                  <span className={`inline-block mt-0.5 text-[10px] px-2 py-0.5 rounded-full font-semibold ${estadoBadge(selectedOt.estado)}`}>
+                    {selectedOt.estado}
+                  </span>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 uppercase font-semibold">Fecha de Creación</p>
-                  <p className="font-mono text-slate-300">
+                  <p className="text-[10px] text-slate-400 uppercase font-semibold">Fecha de Creación</p>
+                  <p className="font-mono text-slate-700 mt-0.5">
                     {format(new Date(selectedOt.createdAt), 'dd/MM/yyyy HH:mm')}
                   </p>
                 </div>
               </div>
 
-              {/* Problema & Solución */}
               <div className="space-y-2">
-                <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
-                  <p className="font-bold text-slate-300 mb-1">Problema Reportado:</p>
-                  <p className="text-slate-200">{selectedOt.problemaReportado}</p>
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                  <p className="text-[10px] font-semibold text-slate-500 uppercase mb-1">Problema Reportado</p>
+                  <p className="text-slate-800">{selectedOt.problemaReportado}</p>
                 </div>
 
                 {selectedOt.solucionRealizada && (
-                  <div className="p-3 bg-emerald-950/30 border border-emerald-800/80 rounded-xl">
-                    <p className="font-bold text-emerald-400 mb-1">Solución Realizada:</p>
-                    <p className="text-slate-200">{selectedOt.solucionRealizada}</p>
+                  <div className="p-3 bg-emerald-50 border border-emerald-200/60 rounded-lg">
+                    <p className="text-[10px] font-semibold text-emerald-700 uppercase mb-1">Solución Realizada</p>
+                    <p className="text-emerald-800">{selectedOt.solucionRealizada}</p>
                   </div>
                 )}
               </div>
 
-              {/* Insumos Consumidos de Pañol */}
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
-                <p className="font-bold text-amber-400 flex items-center space-x-1.5">
-                  <Package className="w-4 h-4" />
+              <div className="p-3 bg-white border border-slate-200 rounded-lg space-y-2">
+                <p className="text-[10px] font-semibold text-amber-700 flex items-center space-x-1.5 uppercase">
+                  <Package className="w-3.5 h-3.5" />
                   <span>Insumos y Materiales de Pañol Consumidos</span>
                 </p>
 
                 {selectedOt.insumosConsumidos && selectedOt.insumosConsumidos.length > 0 ? (
-                  <div className="space-y-1.5">
+                  <div className="divide-y divide-slate-100 border border-slate-200 rounded-md overflow-hidden">
                     {selectedOt.insumosConsumidos.map((ins) => (
-                      <div
-                        key={ins.id}
-                        className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg flex items-center justify-between"
-                      >
+                      <div key={ins.id} className="px-3 py-2 flex items-center justify-between bg-white">
                         <div>
-                          <p className="font-semibold text-slate-200">{ins.articuloNombre}</p>
+                          <p className="font-semibold text-slate-700">{ins.articuloNombre}</p>
                           <p className="text-[10px] text-slate-400">
-                            Despachado por: {ins.usuarioNombre} • {format(new Date(ins.fechaHora), 'dd/MM HH:mm')}
+                            Despachado por: {ins.usuarioNombre} · {format(new Date(ins.fechaHora), 'dd/MM HH:mm')}
                           </p>
                         </div>
-                        <span className="font-mono font-bold text-amber-300">
+                        <span className="font-mono font-bold text-amber-700 tabular-nums">
                           {ins.cantidad} {ins.unidadMedida}
                         </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-slate-500 italic">No se han registrado consumos de pañol para esta OT.</p>
+                  <p className="text-slate-400 italic text-xs">No se han registrado consumos de pañol para esta OT.</p>
                 )}
               </div>
 
-              {/* Bitácora de Auditoría Inmutable */}
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
-                <p className="font-bold text-blue-400 flex items-center space-x-1.5">
-                  <History className="w-4 h-4" />
-                  <span>Bitácora de Auditoría Inmutable (registro_bitacora_ot)</span>
+              <div className="p-3 bg-white border border-slate-200 rounded-lg space-y-3">
+                <p className="text-[10px] font-semibold text-slate-600 flex items-center space-x-1.5 uppercase">
+                  <History className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Bitácora de Auditoría Inmutable</span>
                 </p>
 
                 {selectedOt.bitacora && selectedOt.bitacora.length > 0 ? (
                   <div className="space-y-2">
                     {selectedOt.bitacora.map((b) => (
-                      <div
-                        key={b.id}
-                        className="p-2.5 bg-slate-900 border border-slate-800/80 rounded-lg text-xs"
-                      >
+                      <div key={b.id} className="p-2.5 bg-slate-50 border border-slate-200 rounded-md">
                         <div className="flex items-center justify-between mb-1">
-                          <span
-                            className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${
-                              b.tipoOperacion === 'ALTA'
-                                ? 'bg-blue-950 text-blue-400 border border-blue-800'
-                                : b.tipoOperacion === 'CAMBIO_ESTADO'
-                                ? 'bg-purple-950 text-purple-400 border border-purple-800'
-                                : b.tipoOperacion === 'BAJA_LOGICA'
-                                ? 'bg-red-950 text-red-400 border border-red-800'
-                                : 'bg-slate-800 text-slate-300'
-                            }`}
-                          >
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${bitacoraBadge(b.tipoOperacion)}`}>
                             {b.tipoOperacion}
                           </span>
-                          <span className="font-mono text-[10px] text-slate-500">
+                          <span className="font-mono text-[10px] text-slate-400">
                             {format(new Date(b.fechaHora), 'dd/MM/yyyy HH:mm:ss')}
                           </span>
                         </div>
-                        <p className="text-slate-300 text-[11px]">{b.detalleCambio}</p>
+                        <p className="text-slate-700 text-[11px]">{b.detalleCambio}</p>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-slate-500 italic">No hay registros de bitácora.</p>
+                  <p className="text-slate-400 italic text-xs">No hay registros de bitácora.</p>
                 )}
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-800 flex justify-end shrink-0">
-              <button
-                onClick={() => setDetalleModalOpen(false)}
-                className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-semibold text-xs"
-              >
+            <div className="px-6 py-4 border-t border-slate-100 flex justify-end shrink-0">
+              <button onClick={() => setDetalleModalOpen(false)} className={btnSecondary}>
                 Cerrar Detalle
               </button>
             </div>
@@ -1366,67 +1229,69 @@ export const OrdenesPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── Modal 6: Protocolo de Bajas (RF04) ─────────────────────────────── */}
+      {/* Modal 6: Protocolo de Bajas */}
       {deleteModalOpen && selectedOt && (() => {
         const isPending = selectedOt.estado === 'Pendiente';
         const hoursAgo = (new Date().getTime() - new Date(selectedOt.createdAt).getTime()) / (1000 * 60 * 60);
         const isPhysicalDelete = isPending && hoursAgo < 24;
 
         return (
-          <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="p-3 bg-red-600/20 border border-red-500/30 rounded-xl text-red-400">
-                  <AlertTriangle className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white">Protocolo de Bajas (RF04)</h3>
-                  <p className="text-xs text-slate-400">
-                    {selectedOt.numeroOT} • {selectedOt.unidadFuncionalDisplay}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3 text-xs mb-6">
-                {isPhysicalDelete ? (
-                  <div className="p-3 bg-red-950/40 border border-red-900/60 rounded-xl space-y-1.5 text-red-300">
-                    <p className="font-bold text-red-400">⚠️ BAJA FÍSICA (Hard Delete)</p>
-                    <p>
-                      La orden está en estado <span className="font-bold text-white">Pendiente</span> y tiene menos de 24 horas de
-                      antigüedad ({hoursAgo.toFixed(1)} horas). Se borrará físicamente y de forma permanente de la base de datos.
+          <div className={`${modalOverlayCls} items-center`}>
+            <div className="bg-white border border-slate-200 rounded-xl w-full max-w-lg shadow-xl">
+              <div className="p-6">
+                <div className="flex items-center space-x-3 mb-5">
+                  <div className={`p-2.5 rounded-lg ${isPhysicalDelete ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'}`}>
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-slate-900">Protocolo de Bajas (RF04)</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {selectedOt.numeroOT} · {selectedOt.unidadFuncionalDisplay}
                     </p>
                   </div>
-                ) : (
-                  <div className="p-3 bg-amber-950/40 border border-amber-900/60 rounded-xl space-y-1.5 text-amber-300">
-                    <p className="font-bold text-amber-400">📋 BAJA LÓGICA (Soft Delete)</p>
-                    <p>
-                      La orden {hoursAgo >= 24 ? `tiene más de 24 horas de creada (${hoursAgo.toFixed(1)} horas)` : `se encuentra en estado '${selectedOt.estado}'`}.
-                      No se borrará físicamente: pasará a estado <span className="font-bold text-white">Cancelado</span>, se registrará el evento en la bitácora de auditoría histórica y se ocultará de las vistas activas.
-                    </p>
-                  </div>
-                )}
-              </div>
+                </div>
 
-              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setDeleteModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold text-xs"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => deleteMutation.mutate(selectedOt.idOt)}
-                  disabled={deleteMutation.isPending}
-                  className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl font-semibold text-xs shadow-lg shadow-red-600/30"
-                >
-                  {deleteMutation.isPending
-                    ? 'Procesando...'
-                    : isPhysicalDelete
-                    ? 'Confirmar Baja Física'
-                    : 'Confirmar Baja Lógica'}
-                </button>
+                <div className="space-y-3 mb-5">
+                  {isPhysicalDelete ? (
+                    <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg space-y-1.5 text-rose-800 text-xs">
+                      <p className="font-bold text-rose-700">⚠️ BAJA FÍSICA (Hard Delete)</p>
+                      <p>
+                        La orden está en estado <span className="font-bold">Pendiente</span> y tiene menos de 24 horas de
+                        antigüedad ({hoursAgo.toFixed(1)} horas). Se borrará físicamente y de forma permanente de la base de datos.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-amber-50 border border-amber-200/60 rounded-lg space-y-1.5 text-amber-800 text-xs">
+                      <p className="font-bold text-amber-700">📋 BAJA LÓGICA (Soft Delete)</p>
+                      <p>
+                        La orden {hoursAgo >= 24 ? `tiene más de 24 horas de creada (${hoursAgo.toFixed(1)} horas)` : `se encuentra en estado '${selectedOt.estado}'`}.
+                        No se borrará físicamente: pasará a estado <span className="font-bold">Cancelado</span> y se registrará en la bitácora de auditoría.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setDeleteModalOpen(false)}
+                    className={btnSecondary}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteMutation.mutate(selectedOt.idOt)}
+                    disabled={deleteMutation.isPending}
+                    className="px-5 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-md text-sm font-semibold shadow-xs transition-all duration-150 active:scale-[0.99]"
+                  >
+                    {deleteMutation.isPending
+                      ? 'Procesando...'
+                      : isPhysicalDelete
+                      ? 'Confirmar Baja Física'
+                      : 'Confirmar Baja Lógica'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

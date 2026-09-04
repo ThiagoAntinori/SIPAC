@@ -91,7 +91,6 @@ const extractChanges = (
     return { changes: items, type: 'deleted' };
   }
 
-  // Modificación (Modified): SOLO atributos que cambiaron
   const allKeys = Array.from(new Set([...Object.keys(ant), ...Object.keys(nue)]));
   const diffKeys = allKeys.filter((k) => {
     const v1 = ant[k];
@@ -158,28 +157,36 @@ export const AuditoriaPage: React.FC = () => {
     });
   }, [logs, accionFilter, modelFilter, search]);
 
+  const accionBadge = (accion: string) => {
+    switch (accion) {
+      case 'Added':    return 'bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold';
+      case 'Modified': return 'bg-sky-50 text-sky-800 border border-sky-300 font-bold';
+      default:         return 'bg-rose-50 text-rose-800 border border-rose-300 font-bold';
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-white tracking-wide flex items-center space-x-2.5">
-          <ShieldAlert className="w-6 h-6 text-blue-400" />
+        <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center space-x-2">
+          <ShieldAlert className="w-5 h-5 text-slate-500" />
           <span>Trazabilidad y Auditoría</span>
         </h1>
-        <p className="text-slate-400 text-sm">
+        <p className="text-slate-600 text-sm mt-0.5">
           Registro inmutable de cambios y modificaciones en las entidades del sistema
         </p>
       </div>
 
       {/* Filters Bar */}
-      <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl flex flex-col md:flex-row items-center gap-3">
+      <div className="p-3 bg-white border border-slate-200 rounded-lg shadow-xs flex flex-col md:flex-row items-center gap-3">
         <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por usuario, entidad, ID o valor modificado..."
-            className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            className="w-full pl-9 pr-4 h-9 bg-white border border-slate-300 rounded-md text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
           />
         </div>
 
@@ -187,7 +194,7 @@ export const AuditoriaPage: React.FC = () => {
           <select
             value={accionFilter}
             onChange={(e) => setAccionFilter(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+            className="w-full px-3 h-9 bg-white border border-slate-300 rounded-md text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
           >
             <option value="">Todas las Acciones</option>
             <option value="Added">Altas (Added)</option>
@@ -200,30 +207,29 @@ export const AuditoriaPage: React.FC = () => {
           <select
             value={modelFilter}
             onChange={(e) => setModelFilter(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+            className="w-full px-3 h-9 bg-white border border-slate-300 rounded-md text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
           >
             <option value="">Todas las Entidades</option>
             {modelsAvailable.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
+              <option key={m} value={m}>{m}</option>
             ))}
           </select>
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+      <div className="bg-white border border-slate-200 rounded-lg shadow-xs overflow-hidden">
         {isLoading ? (
-          <div className="p-8 text-center text-slate-400">Cargando registros de auditoría...</div>
+          <div className="p-8 text-center text-slate-400 text-sm">Cargando registros de auditoría...</div>
         ) : filteredLogs.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">
-            No se encontraron registros de auditoría con los filtros seleccionados.
+          <div className="p-8 text-center">
+            <ShieldAlert className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <p className="text-slate-400 text-sm">No se encontraron registros con los filtros seleccionados.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+              <thead className="bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                 <tr>
                   <th className="py-3 px-4">Fecha / Hora</th>
                   <th className="py-3 px-4">Usuario</th>
@@ -232,71 +238,59 @@ export const AuditoriaPage: React.FC = () => {
                   <th className="py-3 px-4 text-right">Detalle de Cambios</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-mono">
+              <tbody className="divide-y divide-slate-100 font-mono">
                 {filteredLogs.map((l) => {
                   const isExpanded = !!expandedIds[l.id];
                   const { changes, type } = extractChanges(l);
 
                   return (
                     <React.Fragment key={l.id}>
-                      <tr className={`hover:bg-slate-900/50 transition-colors ${isExpanded ? 'bg-slate-900/30' : ''}`}>
-                        <td className="py-3.5 px-4 text-slate-400 whitespace-nowrap">
+                      <tr className={`hover:bg-slate-50 transition-colors ${isExpanded ? 'bg-slate-50/80' : ''}`}>
+                        <td className="py-3 px-4 text-slate-600 font-medium whitespace-nowrap tabular-nums">
                           {format(new Date(l.timestamp), 'dd/MM/yyyy HH:mm:ss')}
                         </td>
-                        <td className="py-3.5 px-4 font-sans font-semibold text-slate-200">
+                        <td className="py-3 px-4 font-sans font-semibold text-slate-900">
                           {l.usuarioNombre}
                         </td>
-                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                          <span
-                            className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                              l.accion === 'Added'
-                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                                : l.accion === 'Modified'
-                                ? 'bg-blue-950 text-blue-400 border border-blue-800'
-                                : 'bg-red-950 text-red-400 border border-red-800'
-                            }`}
-                          >
-                            {l.accion === 'Added'
-                              ? 'Alta'
-                              : l.accion === 'Modified'
-                              ? 'Modificación'
-                              : 'Baja'}
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${accionBadge(l.accion)}`}>
+                            {l.accion === 'Added' ? 'Alta' : l.accion === 'Modified' ? 'Modificación' : 'Baja'}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4 font-sans text-slate-300">
-                          <span className="font-semibold text-white">{l.model}</span>{' '}
-                          <span className="text-slate-500 text-[11px]">(ID #{l.modelId || '-'})</span>
+                        <td className="py-3 px-4 font-sans text-slate-600">
+                          <span className="font-semibold text-slate-900">{l.model}</span>{' '}
+                          <span className="text-slate-400 text-[11px]">(ID #{l.modelId || '-'})</span>
                         </td>
-                        <td className="py-3.5 px-4 text-right font-sans">
+                        <td className="py-3 px-4 text-right font-sans">
                           <div className="flex items-center justify-end space-x-2.5">
                             {type === 'modified' && (
-                              <span className="inline-block text-[11px] font-medium text-slate-400">
-                                <span className="font-bold text-blue-400">{changes.length}</span>{' '}
+                              <span className="inline-block text-[11px] font-medium text-slate-500">
+                                <span className="font-bold text-sky-600">{changes.length}</span>{' '}
                                 {changes.length === 1 ? 'campo modificado' : 'campos modificados'}
                               </span>
                             )}
                             {type === 'added' && (
-                              <span className="inline-block text-[11px] font-medium text-emerald-400">
+                              <span className="inline-block text-[11px] font-medium text-emerald-600">
                                 Creación ({changes.length} campos)
                               </span>
                             )}
                             {type === 'deleted' && (
-                              <span className="inline-block text-[11px] font-medium text-red-400">
+                              <span className="inline-block text-[11px] font-medium text-rose-600">
                                 Eliminación ({changes.length} campos)
                               </span>
                             )}
                             {type === 'empty' && (
-                              <span className="inline-block text-[11px] text-slate-500 italic">
+                              <span className="inline-block text-[11px] text-slate-400 italic">
                                 Sin cambios registrados
                               </span>
                             )}
 
                             <button
                               onClick={() => toggleExpand(l.id)}
-                              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                              className={`flex items-center space-x-1 px-2.5 py-1 rounded-md text-xs font-semibold border transition-all ${
                                 isExpanded
-                                  ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-600/20'
-                                  : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800 hover:text-white'
+                                  ? 'bg-slate-900 text-white border-slate-700'
+                                  : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300'
                               }`}
                               title={isExpanded ? 'Ocultar detalles' : 'Ver atributos'}
                             >
@@ -313,13 +307,13 @@ export const AuditoriaPage: React.FC = () => {
 
                       {/* Fila desplegable con el detalle específico */}
                       {isExpanded && (
-                        <tr className="bg-slate-950/90 border-y border-slate-800/80">
+                        <tr className="bg-slate-50 border-b border-slate-200">
                           <td colSpan={5} className="py-4 px-6 font-sans">
                             {type === 'modified' && (
-                              <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 shadow-inner">
-                                <div className="text-xs font-bold text-slate-200 mb-3 flex items-center justify-between">
+                              <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs">
+                                <div className="text-xs font-semibold text-slate-700 mb-3 flex items-center justify-between">
                                   <div className="flex items-center space-x-2">
-                                    <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+                                    <span className="w-2 h-2 rounded-full bg-sky-500" />
                                     <span>Atributos Modificados ({changes.length})</span>
                                   </div>
                                   <span className="text-[11px] text-slate-400 font-normal">
@@ -327,35 +321,33 @@ export const AuditoriaPage: React.FC = () => {
                                   </span>
                                 </div>
 
-                                <div className="overflow-x-auto rounded-lg border border-slate-800/80">
+                                <div className="overflow-x-auto rounded-md border border-slate-200">
                                   <table className="w-full text-left text-xs">
-                                    <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                                    <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider border-b border-slate-200">
                                       <tr>
                                         <th className="py-2.5 px-4">Atributo</th>
                                         <th className="py-2.5 px-4 text-left">Valor Anterior</th>
-                                        <th className="py-2.5 px-2 text-center w-10"></th>
+                                        <th className="py-2.5 px-2 text-center w-10" />
                                         <th className="py-2.5 px-4 text-left">Valor Nuevo</th>
                                       </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-800/60 font-mono text-[11px]">
+                                    <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
                                       {changes.map((c) => (
-                                        <tr key={c.campo} className="hover:bg-slate-800/40 transition-colors">
-                                          <td className="py-2.5 px-4 font-sans font-semibold text-slate-200">
+                                        <tr key={c.campo} className="hover:bg-slate-50 transition-colors">
+                                          <td className="py-2.5 px-4 font-sans font-semibold text-slate-700">
                                             {c.nombreVisible}{' '}
-                                            <span className="text-[10px] text-slate-500 font-mono font-normal">
-                                              ({c.campo})
-                                            </span>
+                                            <span className="text-[10px] text-slate-400 font-mono font-normal">({c.campo})</span>
                                           </td>
-                                          <td className="py-2.5 px-4 text-red-400">
-                                            <span className="inline-block px-2 py-0.5 bg-red-950/50 border border-red-900/50 rounded line-through opacity-80">
+                                          <td className="py-2.5 px-4 text-rose-600">
+                                            <span className="inline-block px-2 py-0.5 bg-rose-50 border border-rose-200 rounded line-through opacity-80">
                                               {formatValue(c.valorAnterior)}
                                             </span>
                                           </td>
-                                          <td className="py-2.5 px-2 text-center text-slate-500 font-sans">
-                                            <ArrowRight className="w-3.5 h-3.5 mx-auto text-blue-400" />
+                                          <td className="py-2.5 px-2 text-center text-slate-400 font-sans">
+                                            <ArrowRight className="w-3.5 h-3.5 mx-auto text-slate-400" />
                                           </td>
-                                          <td className="py-2.5 px-4 text-emerald-400 font-bold">
-                                            <span className="inline-block px-2 py-0.5 bg-emerald-950/50 border border-emerald-900/50 rounded">
+                                          <td className="py-2.5 px-4 text-emerald-700 font-bold">
+                                            <span className="inline-block px-2 py-0.5 bg-emerald-50 border border-emerald-200 rounded">
                                               {formatValue(c.valorNuevo)}
                                             </span>
                                           </td>
@@ -368,22 +360,19 @@ export const AuditoriaPage: React.FC = () => {
                             )}
 
                             {type === 'added' && (
-                              <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 shadow-inner">
-                                <div className="text-xs font-bold text-emerald-400 mb-3 flex items-center space-x-2">
-                                  <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                              <div className="bg-white border border-emerald-200/60 rounded-lg p-4 shadow-xs">
+                                <div className="text-xs font-semibold text-emerald-700 mb-3 flex items-center space-x-2">
+                                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
                                   <span>Valores Iniciales del Registro Creado ({changes.length} atributos)</span>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
                                   {changes.map((c) => (
-                                    <div
-                                      key={c.campo}
-                                      className="p-2.5 bg-slate-950/70 border border-slate-800/80 rounded-lg"
-                                    >
+                                    <div key={c.campo} className="p-2.5 bg-slate-50 border border-slate-200 rounded-md">
                                       <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
                                         {c.nombreVisible}
                                       </div>
                                       <div
-                                        className="text-xs font-mono font-semibold text-emerald-300 truncate mt-1"
+                                        className="text-xs font-mono font-semibold text-emerald-700 truncate mt-1"
                                         title={formatValue(c.valorNuevo)}
                                       >
                                         {formatValue(c.valorNuevo)}
@@ -395,22 +384,19 @@ export const AuditoriaPage: React.FC = () => {
                             )}
 
                             {type === 'deleted' && (
-                              <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 shadow-inner">
-                                <div className="text-xs font-bold text-red-400 mb-3 flex items-center space-x-2">
-                                  <span className="w-2 h-2 rounded-full bg-red-400"></span>
+                              <div className="bg-white border border-rose-200/60 rounded-lg p-4 shadow-xs">
+                                <div className="text-xs font-semibold text-rose-700 mb-3 flex items-center space-x-2">
+                                  <span className="w-2 h-2 rounded-full bg-rose-500" />
                                   <span>Valores Previos a la Baja ({changes.length} atributos)</span>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
                                   {changes.map((c) => (
-                                    <div
-                                      key={c.campo}
-                                      className="p-2.5 bg-slate-950/70 border border-slate-800/80 rounded-lg"
-                                    >
+                                    <div key={c.campo} className="p-2.5 bg-slate-50 border border-slate-200 rounded-md">
                                       <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
                                         {c.nombreVisible}
                                       </div>
                                       <div
-                                        className="text-xs font-mono font-semibold text-red-300 truncate mt-1"
+                                        className="text-xs font-mono font-semibold text-rose-700 truncate mt-1"
                                         title={formatValue(c.valorAnterior)}
                                       >
                                         {formatValue(c.valorAnterior)}
@@ -422,7 +408,7 @@ export const AuditoriaPage: React.FC = () => {
                             )}
 
                             {type === 'empty' && (
-                              <div className="p-4 text-center text-slate-500 text-xs italic bg-slate-900/40 rounded-xl border border-slate-800">
+                              <div className="p-4 text-center text-slate-400 text-xs italic bg-white rounded-lg border border-slate-200">
                                 No se encontraron atributos detallados en este registro histórico.
                               </div>
                             )}

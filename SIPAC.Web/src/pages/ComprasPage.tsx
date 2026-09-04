@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { comprasApi, articulosApi } from '../services/api';
 import toast from 'react-hot-toast';
-import { ArrowDownLeft, Plus, Trash2, X, Receipt, CheckCircle, AlertTriangle } from 'lucide-react';
+import { ArrowDownLeft, Plus, Trash2, X, Receipt, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface ItemRow {
   articuloId: number;
   cantidadRecibida: number;
 }
+
+const inputCls = 'w-full px-3 h-9 bg-white border border-slate-300 rounded-md text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all';
+const labelCls = 'block text-xs font-semibold text-slate-700 mb-1.5';
 
 export const ComprasPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -141,33 +144,36 @@ export const ComprasPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wide">Compras e Ingresos</h1>
-          <p className="text-slate-400 text-sm">Registro de facturas, remitos y reposición de stock</p>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Compras e Ingresos</h1>
+          <p className="text-slate-700 font-medium text-sm mt-0.5">Registro de facturas, remitos y reposición de stock</p>
         </div>
 
         <button
           onClick={openModal}
-          className="flex items-center space-x-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-600/20 transition-all"
+          className="flex items-center space-x-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold shadow-xs transition-all duration-150 active:scale-[0.99]"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           <span>Registrar Nueva Compra</span>
         </button>
       </div>
 
       {/* Table */}
-      <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+      <div className="bg-white border border-slate-200 rounded-lg shadow-xs overflow-hidden">
         {isLoading ? (
-          <div className="p-8 text-center text-slate-400">Cargando compras...</div>
+          <div className="p-8 text-center text-slate-400 text-sm">Cargando compras...</div>
         ) : compras.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">No hay compras registradas.</div>
+          <div className="p-8 text-center">
+            <ArrowDownLeft className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <p className="text-slate-400 text-sm">No hay compras registradas.</p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+              <thead className="bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                 <tr>
                   <th className="py-3 px-4">N° Comprobante</th>
                   <th className="py-3 px-4">Fecha Compra</th>
@@ -176,27 +182,27 @@ export const ComprasPage: React.FC = () => {
                   <th className="py-3 px-4">Observaciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-100">
                 {compras.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-900/50 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-emerald-400">{c.nroComprobante}</td>
-                    <td className="py-3 px-4 text-slate-400 font-mono">
+                  <tr key={c.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-3 px-4 font-mono font-semibold text-emerald-800 font-bold tabular-nums">{c.nroComprobante}</td>
+                    <td className="py-3 px-4 text-slate-700 font-medium font-mono font-medium tabular-nums">
                       {format(new Date(c.fechaCompra), 'dd/MM/yyyy')}
                     </td>
-                    <td className="py-3 px-4 text-slate-300">{c.usuarioNombre}</td>
+                    <td className="py-3 px-4 text-slate-700 font-medium">{c.usuarioNombre}</td>
                     <td className="py-3 px-4">
                       <div className="space-y-1">
                         {c.detalles.map((d, i) => (
-                          <div key={i} className="flex items-center space-x-2 text-slate-200">
-                            <span className="font-semibold">{d.articuloNombre}</span>
-                            <span className="font-mono text-emerald-400 font-bold">
+                          <div key={i} className="flex items-center space-x-2">
+                            <span className="font-semibold text-slate-700">{d.articuloNombre}</span>
+                            <span className="font-mono font-bold text-emerald-600 tabular-nums">
                               +{d.cantidadRecibida} {d.unidadMedida}
                             </span>
                           </div>
                         ))}
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-slate-400 italic">{c.observacionesDiferencia || '-'}</td>
+                    <td className="py-3 px-4 text-slate-600 italic">{c.observacionesDiferencia || '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -207,52 +213,48 @@ export const ComprasPage: React.FC = () => {
 
       {/* Modal Registrar Compra */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-              <h3 className="text-lg font-bold text-white flex items-center space-x-2">
-                <Receipt className="w-5 h-5 text-emerald-400" />
-                <span>Registrar Comprobante de Compra</span>
-              </h3>
-              <button onClick={closeModal} className="text-slate-400 hover:text-white">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-slate-200 rounded-xl w-full max-w-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-1.5 bg-emerald-50 rounded-md">
+                  <Receipt className="w-4 h-4 text-emerald-600" />
+                </div>
+                <h3 className="text-base font-semibold text-slate-900">Registrar Comprobante de Compra</h3>
+              </div>
+              <button onClick={closeModal} className="p-1 text-slate-400 hover:text-slate-700 font-medium rounded-md hover:bg-slate-100 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} noValidate className="space-y-4 text-xs">
+            <form onSubmit={handleSubmit} noValidate className="px-6 py-4 space-y-4">
               {formError && (
-                <div className="p-3 bg-red-950/80 border border-red-800/80 rounded-xl text-red-200 text-xs flex items-start space-x-2.5">
-                  <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-md text-rose-700 text-xs flex items-start space-x-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
                   <div className="flex-1 font-medium">{formError}</div>
                 </div>
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">N° Comprobante / Factura / Remito *</label>
+                  <label className={labelCls}>N° Comprobante / Factura / Remito *</label>
                   <input
                     type="text"
                     value={nroComprobante}
-                    onChange={(e) => {
-                      setNroComprobante(e.target.value);
-                      if (formError) setFormError(null);
-                    }}
+                    onChange={(e) => { setNroComprobante(e.target.value); if (formError) setFormError(null); }}
                     placeholder="Ej. FC-A-0001-0004523"
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500 font-mono"
+                    className={`${inputCls} font-mono`}
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Fecha de Emisión *</label>
+                  <label className={labelCls}>Fecha de Emisión *</label>
                   <input
                     type="date"
                     value={fechaCompra}
-                    onChange={(e) => {
-                      setFechaCompra(e.target.value);
-                      if (formError) setFormError(null);
-                    }}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500"
+                    onChange={(e) => { setFechaCompra(e.target.value); if (formError) setFormError(null); }}
+                    className={inputCls}
                     required
                   />
                 </div>
@@ -261,32 +263,30 @@ export const ComprasPage: React.FC = () => {
               {/* Items List */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-slate-300 font-semibold">Detalle de Materiales Recibidos *</label>
+                  <label className={`${labelCls} mb-0`}>Detalle de Materiales Recibidos *</label>
                   <button
                     type="button"
                     onClick={addItemRow}
-                    className="text-emerald-400 hover:text-emerald-300 font-semibold flex items-center space-x-1 text-xs"
+                    className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center space-x-1"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Agregar Ítem</span>
                   </button>
                 </div>
 
-                <div className="space-y-2 max-h-48 overflow-y-auto p-1 bg-slate-950/50 rounded-xl border border-slate-800">
+                <div className="space-y-2 max-h-48 overflow-y-auto p-1 bg-slate-50 rounded-lg border border-slate-200">
                   {items.map((item, idx) => {
                     const art = articulos.find((a) => a.id === item.articuloId);
                     return (
-                      <div key={idx} className="flex items-center gap-2 p-2 bg-slate-900 border border-slate-800 rounded-lg">
+                      <div key={idx} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-md">
                         <div className="flex-1">
                           <select
                             value={item.articuloId}
                             onChange={(e) => updateItemRow(idx, 'articuloId', Number(e.target.value))}
-                            className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-emerald-500"
+                            className="w-full px-2.5 h-8 bg-white border border-slate-300 rounded-md text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
                             required
                           >
-                            <option value={0} disabled>
-                              Seleccione un material...
-                            </option>
+                            <option value={0} disabled>Seleccione un material...</option>
                             {articulos.map((a) => (
                               <option key={a.id} value={a.id}>
                                 {a.nombre} ({a.unidadMedida}) {!a.esFraccionable ? '[Solo Enteros]' : ''}
@@ -295,39 +295,32 @@ export const ComprasPage: React.FC = () => {
                           </select>
                         </div>
 
-                        <div className="w-32">
-                          <div className="relative">
-                            <input
-                              type="number"
-                              step="any"
-                              value={item.cantidadRecibida}
-                              onKeyDown={(e) => handleItemKeyDown(e, idx)}
-                              onChange={(e) => {
-                                const val = e.target.value === '' ? 0 : Number(e.target.value);
-                                updateItemRow(idx, 'cantidadRecibida', val);
-                                if (art && !art.esFraccionable && val % 1 !== 0) {
-                                  setFormError(`El artículo '${art.nombre}' no es fraccionable: solo se permiten enteros.`);
-                                } else {
-                                  setFormError(null);
-                                }
-                              }}
-                              placeholder="Cantidad"
-                              className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:outline-none focus:border-emerald-500 font-mono text-right"
-                              required
-                            />
-                            {art && (
-                              <span className="absolute -bottom-3.5 right-1 text-[9px] text-slate-500 font-mono">
-                                {art.esFraccionable ? 'decimal' : 'entero'}
-                              </span>
-                            )}
-                          </div>
+                        <div className="w-28">
+                          <input
+                            type="number"
+                            step="any"
+                            value={item.cantidadRecibida}
+                            onKeyDown={(e) => handleItemKeyDown(e, idx)}
+                            onChange={(e) => {
+                              const val = e.target.value === '' ? 0 : Number(e.target.value);
+                              updateItemRow(idx, 'cantidadRecibida', val);
+                              if (art && !art.esFraccionable && val % 1 !== 0) {
+                                setFormError(`El artículo '${art.nombre}' no es fraccionable: solo se permiten enteros.`);
+                              } else {
+                                setFormError(null);
+                              }
+                            }}
+                            placeholder="Cantidad"
+                            className="w-full px-2.5 h-8 bg-white border border-slate-300 rounded-md text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-slate-900/10 font-mono text-right transition-all"
+                            required
+                          />
                         </div>
 
                         <button
                           type="button"
                           onClick={() => removeItemRow(idx)}
                           disabled={items.length <= 1}
-                          className="p-1.5 text-slate-500 hover:text-red-400 disabled:opacity-30"
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md disabled:opacity-30 transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -338,28 +331,28 @@ export const ComprasPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Observaciones / Proveedor</label>
+                <label className={labelCls}>Observaciones / Proveedor</label>
                 <textarea
                   value={observaciones}
                   onChange={(e) => setObservaciones(e.target.value)}
                   placeholder="Proveedor: Ferretería Central. Entregado sin novedades."
                   rows={2}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
                 />
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold"
+                  className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 font-medium border border-slate-200 rounded-md text-sm font-semibold transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={createMutation.isPending}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold shadow-lg shadow-emerald-600/30"
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-md text-sm font-semibold shadow-xs transition-all duration-150 active:scale-[0.99]"
                 >
                   {createMutation.isPending ? 'Guardando...' : 'Confirmar Ingreso'}
                 </button>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { categoriasApi, categoriasTrabajoApi } from '../services/api';
@@ -236,22 +236,22 @@ export const CategoriasPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <Tags className="w-7 h-7 text-blue-500" />
-            <h1 className="text-2xl font-bold text-white tracking-wide">Gestión de Categorías</h1>
+            <Tags className="w-5 h-5 text-slate-500" />
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Gestión de Categorías</h1>
           </div>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-600 text-sm mt-0.5">
             Administración centralizada de categorías de artículos de pañol y rubros de órdenes de trabajo
           </p>
         </div>
 
         {/* Tab Buttons */}
-        <div className="flex items-center p-1 bg-slate-950 border border-slate-800 rounded-xl">
+        <div className="flex items-center p-1 bg-slate-100 border border-slate-200 rounded-lg">
           <button
             onClick={() => setTab('articulos')}
             className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
               currentTab === 'articulos'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                ? 'bg-white text-orange-600 shadow-xs border border-slate-200'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
             }`}
           >
             <Package className="w-4 h-4" />
@@ -261,8 +261,8 @@ export const CategoriasPage: React.FC = () => {
             onClick={() => setTab('trabajo')}
             className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
               currentTab === 'trabajo'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                ? 'bg-white text-orange-600 shadow-xs border border-slate-200'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
             }`}
           >
             <ClipboardList className="w-4 h-4" />
@@ -278,35 +278,35 @@ export const CategoriasPage: React.FC = () => {
         <div className="space-y-6">
           {/* KPI Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl flex items-center space-x-4 shadow-sm">
-              <div className="p-3 bg-blue-600/15 border border-blue-500/20 text-blue-400 rounded-xl">
+            <div className="bg-white border border-slate-200 p-4 rounded-lg flex items-center space-x-4 shadow-xs">
+              <div className="p-2.5 bg-orange-50 border border-orange-200/60 text-orange-600 rounded-lg">
                 <FolderTree className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-xs text-slate-400 font-medium">Total Categorías</p>
-                <h3 className="text-2xl font-bold text-white">{statsArticulos.total}</h3>
+                <h3 className="text-2xl font-bold text-slate-900 tabular-nums">{statsArticulos.total}</h3>
               </div>
             </div>
 
-            <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl flex items-center space-x-4 shadow-sm">
-              <div className="p-3 bg-emerald-600/15 border border-emerald-500/20 text-emerald-400 rounded-xl">
+            <div className="bg-white border border-slate-200 p-4 rounded-lg flex items-center space-x-4 shadow-xs">
+              <div className="p-2.5 bg-emerald-50 border border-emerald-200/60 text-emerald-600 rounded-lg">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-xs text-slate-400 font-medium">Categorías en Uso</p>
-                <h3 className="text-2xl font-bold text-emerald-400">
+                <h3 className="text-2xl font-bold text-emerald-700 tabular-nums">
                   {statsArticulos.conArticulos}
                 </h3>
               </div>
             </div>
 
-            <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl flex items-center space-x-4 shadow-sm">
-              <div className="p-3 bg-amber-600/15 border border-amber-500/20 text-amber-400 rounded-xl">
+            <div className="bg-white border border-slate-200 p-4 rounded-lg flex items-center space-x-4 shadow-xs">
+              <div className="p-2.5 bg-amber-50 border border-amber-200/60 text-amber-600 rounded-lg">
                 <Package className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-xs text-slate-400 font-medium">Artículos Clasificados</p>
-                <h3 className="text-2xl font-bold text-amber-400">
+                <h3 className="text-2xl font-bold text-amber-700 tabular-nums">
                   {statsArticulos.totalArticulos}
                 </h3>
               </div>
@@ -314,7 +314,7 @@ export const CategoriasPage: React.FC = () => {
           </div>
 
           {/* Action and Search Bar */}
-          <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="p-4 bg-white border border-slate-200 rounded-lg shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="relative flex-1 w-full">
               <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
               <input
@@ -322,13 +322,13 @@ export const CategoriasPage: React.FC = () => {
                 value={searchArticulos}
                 onChange={(e) => setSearchArticulos(e.target.value)}
                 placeholder="Buscar categoría de artículo por nombre..."
-                className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                className="w-full pl-9 pr-4 h-9 bg-white border border-slate-300 rounded-md text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
               />
             </div>
 
             <button
               onClick={openCreateArticuloCat}
-              className="w-full sm:w-auto flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold shadow-lg shadow-blue-600/20 transition-all shrink-0"
+              className="w-full sm:w-auto flex items-center justify-center space-x-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md text-sm font-semibold shadow-xs transition-all duration-150 shrink-0"
             >
               <Plus className="w-4 h-4" />
               <span>Nueva Categoría</span>
@@ -336,7 +336,7 @@ export const CategoriasPage: React.FC = () => {
           </div>
 
           {/* Table */}
-          <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+          <div className="bg-white border border-slate-200 rounded-lg shadow-xs overflow-hidden">
             {isLoadingArticulos ? (
               <div className="p-8 text-center text-slate-400">Cargando categorías...</div>
             ) : filteredCategoriasArticulos.length === 0 ? (
@@ -346,7 +346,7 @@ export const CategoriasPage: React.FC = () => {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-900 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                  <thead className="bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                     <tr>
                       <th className="py-3 px-4 w-16 text-center">#</th>
                       <th className="py-3 px-4">Nombre de Categoría</th>
@@ -354,23 +354,23 @@ export const CategoriasPage: React.FC = () => {
                       <th className="py-3 px-4 text-right">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60">
+                  <tbody className="divide-y divide-slate-100">
                     {filteredCategoriasArticulos.map((cat, idx) => {
                       const count = cat.cantidadArticulos || 0;
                       return (
-                        <tr key={cat.id} className="hover:bg-slate-900/50 transition-colors">
+                        <tr key={cat.id} className="hover:bg-slate-50 transition-colors">
                           <td className="py-3 px-4 text-center font-mono text-slate-500">
                             {idx + 1}
                           </td>
                           <td className="py-3 px-4">
-                            <div className="font-semibold text-slate-100 text-sm">{cat.nombre}</div>
+                            <div className="font-semibold text-slate-900 text-sm">{cat.nombre}</div>
                           </td>
                           <td className="py-3 px-4 text-center">
                             <span
                               className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
                                 count > 0
-                                  ? 'bg-blue-950/70 text-blue-400 border border-blue-800/60'
-                                  : 'bg-slate-900 text-slate-500 border border-slate-800'
+                                  ? 'bg-orange-50 text-orange-700 border border-orange-200/60'
+                                  : 'bg-slate-100 text-slate-400 border border-slate-200'
                               }`}
                             >
                               <Package className="w-3 h-3" />
@@ -380,7 +380,7 @@ export const CategoriasPage: React.FC = () => {
                           <td className="py-3 px-4 text-right space-x-2">
                             <button
                               onClick={() => openEditArticuloCat(cat)}
-                              className="p-1.5 bg-slate-900 hover:bg-slate-800 text-blue-400 hover:text-blue-300 rounded-lg border border-slate-800 transition-colors inline-flex items-center space-x-1"
+                              className="p-1.5 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-700 rounded-md border border-slate-200 transition-colors inline-flex items-center space-x-1"
                               title="Editar nombre"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
@@ -390,8 +390,8 @@ export const CategoriasPage: React.FC = () => {
                               onClick={() => setDeleteArticuloCat(cat)}
                               className={`p-1.5 bg-slate-900 rounded-lg border border-slate-800 transition-colors inline-flex items-center space-x-1 ${
                                 count > 0
-                                  ? 'text-slate-600 hover:text-red-400 hover:bg-red-950/20'
-                                  : 'text-red-400 hover:text-red-300 hover:bg-red-950/40'
+                                  ? 'text-slate-300 hover:text-rose-600 hover:bg-rose-50'
+                                  : 'text-rose-500 hover:text-rose-700 hover:bg-rose-50'
                               }`}
                               title={
                                 count > 0
@@ -421,39 +421,39 @@ export const CategoriasPage: React.FC = () => {
         <div className="space-y-6">
           {/* KPI Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl flex items-center space-x-4 shadow-sm">
-              <div className="p-3 bg-blue-600/15 border border-blue-500/20 text-blue-400 rounded-xl">
+            <div className="bg-white border border-slate-200 p-4 rounded-lg flex items-center space-x-4 shadow-xs">
+              <div className="p-2.5 bg-orange-50 border border-orange-200/60 text-orange-600 rounded-lg">
                 <Layers className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-xs text-slate-400 font-medium">Total Rubros</p>
-                <h3 className="text-2xl font-bold text-white">{statsTrabajo.total}</h3>
+                <h3 className="text-2xl font-bold text-slate-900 tabular-nums">{statsTrabajo.total}</h3>
               </div>
             </div>
 
-            <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl flex items-center space-x-4 shadow-sm">
-              <div className="p-3 bg-emerald-600/15 border border-emerald-500/20 text-emerald-400 rounded-xl">
+            <div className="bg-white border border-slate-200 p-4 rounded-lg flex items-center space-x-4 shadow-xs">
+              <div className="p-2.5 bg-emerald-50 border border-emerald-200/60 text-emerald-600 rounded-lg">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-xs text-slate-400 font-medium">Rubros Activos</p>
-                <h3 className="text-2xl font-bold text-emerald-400">{statsTrabajo.activos}</h3>
+                <h3 className="text-2xl font-bold text-emerald-700 tabular-nums">{statsTrabajo.activos}</h3>
               </div>
             </div>
 
-            <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl flex items-center space-x-4 shadow-sm">
-              <div className="p-3 bg-indigo-600/15 border border-indigo-500/20 text-indigo-400 rounded-xl">
+            <div className="bg-white border border-slate-200 p-4 rounded-lg flex items-center space-x-4 shadow-xs">
+              <div className="p-2.5 bg-sky-50 border border-sky-200/60 text-sky-600 rounded-lg">
                 <ClipboardList className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-xs text-slate-400 font-medium">Órdenes Vinculadas</p>
-                <h3 className="text-2xl font-bold text-indigo-400">{statsTrabajo.totalOrdenes}</h3>
+                <h3 className="text-2xl font-bold text-sky-700 tabular-nums">{statsTrabajo.totalOrdenes}</h3>
               </div>
             </div>
           </div>
 
           {/* Action and Search Bar */}
-          <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="p-4 bg-white border border-slate-200 rounded-lg shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
             <div className="relative flex-1 w-full">
               <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
               <input
@@ -461,7 +461,7 @@ export const CategoriasPage: React.FC = () => {
                 value={searchTrabajo}
                 onChange={(e) => setSearchTrabajo(e.target.value)}
                 placeholder="Buscar rubro por especialidad / nombre..."
-                className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                className="w-full pl-9 pr-4 h-9 bg-white border border-slate-300 rounded-md text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
               />
             </div>
 
@@ -469,7 +469,7 @@ export const CategoriasPage: React.FC = () => {
               <select
                 value={filtroEstadoTrabajo}
                 onChange={(e: any) => setFiltroEstadoTrabajo(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                className="w-full px-3 h-9 bg-white border border-slate-300 rounded-md text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
               >
                 <option value="todos">Todos los Estados</option>
                 <option value="activos">Solo Activos</option>
@@ -479,7 +479,7 @@ export const CategoriasPage: React.FC = () => {
 
             <button
               onClick={openCreateTrabajoCat}
-              className="w-full md:w-auto flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold shadow-lg shadow-blue-600/20 transition-all shrink-0"
+              className="w-full md:w-auto flex items-center justify-center space-x-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md text-sm font-semibold shadow-xs transition-all duration-150 shrink-0"
             >
               <Plus className="w-4 h-4" />
               <span>Nuevo Rubro</span>
@@ -487,7 +487,7 @@ export const CategoriasPage: React.FC = () => {
           </div>
 
           {/* Table */}
-          <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+          <div className="bg-white border border-slate-200 rounded-lg shadow-xs overflow-hidden">
             {isLoadingTrabajo ? (
               <div className="p-8 text-center text-slate-400">Cargando rubros de trabajo...</div>
             ) : filteredCategoriasTrabajo.length === 0 ? (
@@ -497,7 +497,7 @@ export const CategoriasPage: React.FC = () => {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-900 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                  <thead className="bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                     <tr>
                       <th className="py-3 px-4 w-16 text-center">#</th>
                       <th className="py-3 px-4">Rubro / Especialidad</th>
@@ -506,20 +506,20 @@ export const CategoriasPage: React.FC = () => {
                       <th className="py-3 px-4 text-right">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60">
+                  <tbody className="divide-y divide-slate-100">
                     {filteredCategoriasTrabajo.map((cat, idx) => {
                       const count = cat.cantidadOrdenes || 0;
                       return (
-                        <tr key={cat.id} className="hover:bg-slate-900/50 transition-colors">
+                        <tr key={cat.id} className="hover:bg-slate-50 transition-colors">
                           <td className="py-3 px-4 text-center font-mono text-slate-500">
                             {idx + 1}
                           </td>
                           <td className="py-3 px-4">
-                            <div className="font-semibold text-slate-100 text-sm">{cat.nombre}</div>
+                            <div className="font-semibold text-slate-900 text-sm">{cat.nombre}</div>
                           </td>
                           <td className="py-3 px-4 text-center">
                             {cat.activo ? (
-                              <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800">
+                              <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold">
                                 <Check className="w-3 h-3" />
                                 <span>Activo</span>
                               </span>
@@ -533,8 +533,8 @@ export const CategoriasPage: React.FC = () => {
                             <span
                               className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
                                 count > 0
-                                  ? 'bg-indigo-950/70 text-indigo-400 border border-indigo-800/60'
-                                  : 'bg-slate-900 text-slate-500 border border-slate-800'
+                                  ? 'bg-sky-50 text-sky-700 border border-sky-200/60'
+                                  : 'bg-slate-100 text-slate-400 border border-slate-200'
                               }`}
                             >
                               <ClipboardList className="w-3 h-3" />
@@ -546,8 +546,8 @@ export const CategoriasPage: React.FC = () => {
                               onClick={() => toggleActivoTrabajoMutation.mutate(cat)}
                               className={`p-1.5 rounded-lg border transition-colors inline-flex items-center space-x-1 ${
                                 cat.activo
-                                  ? 'bg-emerald-950/30 border-emerald-800/50 text-emerald-400 hover:bg-amber-950/30 hover:border-amber-800/50 hover:text-amber-400'
-                                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-emerald-400 hover:bg-emerald-950/30'
+                                  ? 'bg-white border-emerald-200 text-emerald-600 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-600'
+                                  : 'bg-white border-slate-200 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200'
                               }`}
                               title={cat.activo ? 'Desactivar rubro' : 'Activar rubro'}
                             >
@@ -559,7 +559,7 @@ export const CategoriasPage: React.FC = () => {
 
                             <button
                               onClick={() => openEditTrabajoCat(cat)}
-                              className="p-1.5 bg-slate-900 hover:bg-slate-800 text-blue-400 hover:text-blue-300 rounded-lg border border-slate-800 transition-colors inline-flex items-center space-x-1"
+                              className="p-1.5 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-700 rounded-md border border-slate-200 transition-colors inline-flex items-center space-x-1"
                               title="Editar rubro"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
@@ -570,8 +570,8 @@ export const CategoriasPage: React.FC = () => {
                               onClick={() => setDeleteTrabajoCat(cat)}
                               className={`p-1.5 bg-slate-900 rounded-lg border border-slate-800 transition-colors inline-flex items-center space-x-1 ${
                                 count > 0
-                                  ? 'text-slate-600 hover:text-red-400 hover:bg-red-950/20'
-                                  : 'text-red-400 hover:text-red-300 hover:bg-red-950/40'
+                                  ? 'text-slate-300 hover:text-rose-600 hover:bg-rose-50'
+                                  : 'text-rose-500 hover:text-rose-700 hover:bg-rose-50'
                               }`}
                               title={
                                 count > 0
@@ -609,7 +609,7 @@ export const CategoriasPage: React.FC = () => {
               </div>
               <button
                 onClick={closeModalArticulo}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900 transition-colors"
+                className="p-1 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -640,11 +640,11 @@ export const CategoriasPage: React.FC = () => {
                 />
               </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={closeModalArticulo}
-                  className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-900 rounded-xl transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
                 >
                   Cancelar
                 </button>
@@ -699,11 +699,11 @@ export const CategoriasPage: React.FC = () => {
                 </p>
               )}
 
-              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setDeleteArticuloCat(null)}
-                  className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-900 rounded-xl transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
                 >
                   Cerrar
                 </button>
@@ -739,7 +739,7 @@ export const CategoriasPage: React.FC = () => {
               </div>
               <button
                 onClick={closeModalTrabajo}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900 transition-colors"
+                className="p-1 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -789,11 +789,11 @@ export const CategoriasPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={closeModalTrabajo}
-                  className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-900 rounded-xl transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
                 >
                   Cancelar
                 </button>
@@ -852,11 +852,11 @@ export const CategoriasPage: React.FC = () => {
                 </p>
               )}
 
-              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setDeleteTrabajoCat(null)}
-                  className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-900 rounded-xl transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
                 >
                   Cerrar
                 </button>

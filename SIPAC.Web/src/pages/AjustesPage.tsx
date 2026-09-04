@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ajustesApi, articulosApi } from '../services/api';
 import toast from 'react-hot-toast';
-import { SlidersHorizontal, Plus, X, AlertOctagon, AlertTriangle } from 'lucide-react';
+import { SlidersHorizontal, Plus, X, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
+
+const inputCls = 'w-full px-3 h-9 bg-white border border-slate-300 rounded-md text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all';
+const labelCls = 'block text-xs font-semibold text-slate-700 mb-1.5';
 
 export const AjustesPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -116,33 +119,44 @@ export const AjustesPage: React.FC = () => {
     createMutation.mutate();
   };
 
+  const tipoBadge = (tipo: string) => {
+    switch (tipo) {
+      case 'Alta': return 'bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold';
+      case 'Baja': return 'bg-rose-50 text-rose-800 border border-rose-300 font-bold';
+      default:     return 'bg-sky-50 text-sky-800 border border-sky-300 font-bold';
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wide">Ajustes de Inventario</h1>
-          <p className="text-slate-400 text-sm">Modificaciones manuales de stock auditadas con justificación obligatoria</p>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Ajustes de Inventario</h1>
+          <p className="text-slate-600 text-sm mt-0.5">Modificaciones manuales de stock auditadas con justificación obligatoria</p>
         </div>
 
         <button
           onClick={openModal}
-          className="flex items-center space-x-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/20 transition-all"
+          className="flex items-center space-x-1.5 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md text-xs font-semibold shadow-xs transition-all duration-150 active:scale-[0.99]"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           <span>Nuevo Ajuste</span>
         </button>
       </div>
 
       {/* Table */}
-      <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+      <div className="bg-white border border-slate-200 rounded-lg shadow-xs overflow-hidden">
         {isLoading ? (
-          <div className="p-8 text-center text-slate-400">Cargando ajustes...</div>
+          <div className="p-8 text-center text-slate-600 text-sm">Cargando ajustes...</div>
         ) : ajustes.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">No hay ajustes registrados.</div>
+          <div className="p-8 text-center">
+            <SlidersHorizontal className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <p className="text-slate-600 text-sm">No hay ajustes registrados.</p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+              <thead className="bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                 <tr>
                   <th className="py-3 px-4">Fecha / Hora</th>
                   <th className="py-3 px-4">Artículo</th>
@@ -153,32 +167,24 @@ export const AjustesPage: React.FC = () => {
                   <th className="py-3 px-4">Usuario</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-100">
                 {ajustes.map((a) => (
-                  <tr key={a.id} className="hover:bg-slate-900/50 transition-colors">
-                    <td className="py-3 px-4 font-mono text-slate-400">
+                  <tr key={a.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-3 px-4 font-mono text-slate-800 font-medium tabular-nums">
                       {format(new Date(a.fechaHora), 'dd/MM/yyyy HH:mm')}
                     </td>
-                    <td className="py-3 px-4 font-semibold text-slate-200">{a.articuloNombre}</td>
+                    <td className="py-3 px-4 font-semibold text-slate-900 text-sm">{a.articuloNombre}</td>
                     <td className="py-3 px-4 text-center">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          a.tipoAjuste === 'Alta'
-                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                            : a.tipoAjuste === 'Baja'
-                            ? 'bg-red-950 text-red-400 border border-red-800'
-                            : 'bg-blue-950 text-blue-400 border border-blue-800'
-                        }`}
-                      >
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${tipoBadge(a.tipoAjuste)}`}>
                         {a.tipoAjuste}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-slate-200">
+                    <td className="py-3 px-4 text-right font-mono font-bold text-slate-900 tabular-nums">
                       {a.cantidad} {a.unidadMedida}
                     </td>
-                    <td className="py-3 px-4 text-slate-300 font-medium">{a.motivo}</td>
-                    <td className="py-3 px-4 text-slate-400 italic">{a.justificacion}</td>
-                    <td className="py-3 px-4 text-slate-400">{a.usuarioNombre}</td>
+                    <td className="py-3 px-4 text-slate-800 font-medium">{a.motivo}</td>
+                    <td className="py-3 px-4 text-slate-600 italic">{a.justificacion}</td>
+                    <td className="py-3 px-4 text-slate-600">{a.usuarioNombre}</td>
                   </tr>
                 ))}
               </tbody>
@@ -187,31 +193,33 @@ export const AjustesPage: React.FC = () => {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modal Ajuste */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-              <h3 className="text-lg font-bold text-white flex items-center space-x-2">
-                <SlidersHorizontal className="w-5 h-5 text-blue-400" />
-                <span>Registrar Ajuste de Stock</span>
-              </h3>
-              <button onClick={closeModal} className="text-slate-400 hover:text-white">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-slate-200 rounded-xl w-full max-w-lg shadow-xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-1.5 bg-orange-50 rounded-md">
+                  <SlidersHorizontal className="w-4 h-4 text-orange-600" />
+                </div>
+                <h3 className="text-base font-semibold text-slate-900">Registrar Ajuste de Stock</h3>
+              </div>
+              <button onClick={closeModal} className="p-1 text-slate-600 hover:text-slate-600 rounded-md hover:bg-slate-100 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} noValidate className="space-y-4 text-xs">
+            <form onSubmit={handleSubmit} noValidate className="px-6 py-4 space-y-4">
               {formError && (
-                <div className="p-3 bg-red-950/80 border border-red-800/80 rounded-xl text-red-200 text-xs flex items-start space-x-2.5">
-                  <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-md text-rose-700 text-xs flex items-start space-x-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
                   <div className="flex-1 font-medium">{formError}</div>
                 </div>
               )}
 
               {tipoAjuste === 'Baja' && selectedArticulo && cantidad > selectedArticulo.stockActual && (
-                <div className="p-3 bg-amber-950/80 border border-amber-800/80 rounded-xl text-amber-200 text-xs flex items-start space-x-2.5">
-                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div className="p-3 bg-amber-50 border border-amber-200/60 rounded-md text-amber-800 text-xs flex items-start space-x-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <div className="flex-1 font-medium">
                     Atención: Descontar {cantidad} supera el stock actual disponible ({selectedArticulo.stockActual} {selectedArticulo.unidadMedida}).
                   </div>
@@ -219,19 +227,14 @@ export const AjustesPage: React.FC = () => {
               )}
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Artículo a Ajustar *</label>
+                <label className={labelCls}>Artículo a Ajustar *</label>
                 <select
                   value={articuloId}
-                  onChange={(e) => {
-                    setArticuloId(Number(e.target.value));
-                    setFormError(null);
-                  }}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
+                  onChange={(e) => { setArticuloId(Number(e.target.value)); setFormError(null); }}
+                  className={inputCls}
                   required
                 >
-                  <option value={0} disabled>
-                    Seleccione artículo...
-                  </option>
+                  <option value={0} disabled>Seleccione artículo...</option>
                   {articulos.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.nombre} (Stock actual: {a.stockActual} {a.unidadMedida}) {!a.esFraccionable ? '[Solo Enteros]' : ''}
@@ -239,12 +242,10 @@ export const AjustesPage: React.FC = () => {
                   ))}
                 </select>
                 {selectedArticulo && (
-                  <p className="text-[11px] text-slate-400 mt-1">
+                  <p className="text-[11px] text-slate-600 mt-1">
                     Stock actual:{' '}
-                    <span className="font-mono text-blue-400 font-bold">
-                      {selectedArticulo.stockActual} {selectedArticulo.unidadMedida}
-                    </span>
-                    <span className="ml-2 text-slate-500">
+                    <span className="font-mono font-bold text-slate-700">{selectedArticulo.stockActual} {selectedArticulo.unidadMedida}</span>
+                    <span className="ml-2 text-slate-600">
                       ({selectedArticulo.esFraccionable ? 'Fraccionable con decimales' : 'No fraccionable, solo enteros'})
                     </span>
                   </p>
@@ -253,14 +254,11 @@ export const AjustesPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Tipo de Ajuste *</label>
+                  <label className={labelCls}>Tipo de Ajuste *</label>
                   <select
                     value={tipoAjuste}
-                    onChange={(e) => {
-                      setTipoAjuste(e.target.value as any);
-                      setFormError(null);
-                    }}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
+                    onChange={(e) => { setTipoAjuste(e.target.value as any); setFormError(null); }}
+                    className={inputCls}
                   >
                     <option value="Recuento">Recuento Físico (Fijar stock exacto)</option>
                     <option value="Alta">Alta (Sumar al stock)</option>
@@ -269,11 +267,11 @@ export const AjustesPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-slate-300 font-semibold">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className={`${labelCls} mb-0`}>
                       {tipoAjuste === 'Recuento' ? 'Stock Contado Real' : 'Cantidad a Ajustar'} *
                     </label>
-                    <span className="text-[10px] text-slate-500 font-mono">
+                    <span className="text-[10px] text-slate-600 font-mono">
                       {selectedArticulo?.esFraccionable ? 'Decimal o entero' : 'Solo enteros'}
                     </span>
                   </div>
@@ -291,19 +289,15 @@ export const AjustesPage: React.FC = () => {
                         setFormError(null);
                       }
                     }}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm font-mono focus:outline-none focus:border-blue-500"
+                    className={`${inputCls} font-mono text-right`}
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Motivo Principal *</label>
-                <select
-                  value={motivo}
-                  onChange={(e) => setMotivo(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
-                >
+                <label className={labelCls}>Motivo Principal *</label>
+                <select value={motivo} onChange={(e) => setMotivo(e.target.value)} className={inputCls}>
                   <option value="Recuento de inventario físico">Recuento de inventario físico</option>
                   <option value="Material dañado o vencido">Material dañado o vencido</option>
                   <option value="Diferencia de remito">Diferencia de remito</option>
@@ -313,29 +307,29 @@ export const AjustesPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Justificación Auditada *</label>
+                <label className={labelCls}>Justificación Auditada *</label>
                 <textarea
                   value={justificacion}
                   onChange={(e) => setJustificacion(e.target.value)}
                   placeholder="Detalle el motivo específico del ajuste..."
                   rows={2}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
                   required
                 />
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold"
+                  className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 rounded-md text-sm font-semibold transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={createMutation.isPending}
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold shadow-lg shadow-blue-600/30"
+                  className="px-5 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white rounded-md text-sm font-semibold shadow-xs transition-all duration-150 active:scale-[0.99]"
                 >
                   {createMutation.isPending ? 'Aplicando...' : 'Aplicar Ajuste'}
                 </button>
