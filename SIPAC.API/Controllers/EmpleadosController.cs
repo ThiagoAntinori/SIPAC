@@ -22,7 +22,7 @@ public class EmpleadosController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<EmpleadoDto>>> GetAll([FromQuery] bool soloActivos = true)
     {
-        var query = _context.Empleados.AsQueryable();
+        var query = _context.Empleados.AsNoTracking().AsQueryable();
         if (soloActivos) query = query.Where(e => e.Activo);
 
         var list = await query
@@ -31,9 +31,10 @@ public class EmpleadosController : ControllerBase
             {
                 Id = e.Id,
                 NombreCompleto = e.NombreCompleto,
-                Legajo = e.Legajo,
-                PuestoSector = e.PuestoSector,
-                Activo = e.Activo
+                Legajo = e.Legajo ?? "",
+                PuestoSector = e.PuestoSector ?? "",
+                Activo = e.Activo,
+                CantidadOrdenes = e.OrdenesTrabajo.Count
             })
             .ToListAsync();
 
@@ -43,14 +44,22 @@ public class EmpleadosController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<EmpleadoDto>> Create([FromBody] CreateEmpleadoDto request)
     {
-        if (await _context.Empleados.AnyAsync(e => e.Legajo.ToLower() == request.Legajo.ToLower()))
+        if (string.IsNullOrWhiteSpace(request.NombreCompleto))
+            return BadRequest(new { message = "El nombre completo es requerido" });
+
+        var legajoTrimmed = request.Legajo?.Trim();
+        if (!string.IsNullOrWhiteSpace(legajoTrimmed) &&
+            await _context.Empleados.AnyAsync(e => e.Legajo != null && e.Legajo.ToLower() == legajoTrimmed.ToLower()))
+        {
             return BadRequest(new { message = "El legajo ya está registrado" });
+        }
 
         var empleado = new Empleado
         {
+            Id = Guid.NewGuid(),
             NombreCompleto = request.NombreCompleto.Trim(),
-            Legajo = request.Legajo.Trim(),
-            PuestoSector = request.PuestoSector.Trim(),
+            Legajo = string.IsNullOrWhiteSpace(legajoTrimmed) ? null : legajoTrimmed,
+            PuestoSector = string.IsNullOrWhiteSpace(request.PuestoSector) ? null : request.PuestoSector.Trim(),
             Activo = true
         };
 
@@ -61,21 +70,33 @@ public class EmpleadosController : ControllerBase
         {
             Id = empleado.Id,
             NombreCompleto = empleado.NombreCompleto,
-            Legajo = empleado.Legajo,
-            PuestoSector = empleado.PuestoSector,
-            Activo = empleado.Activo
+            Legajo = empleado.Legajo ?? "",
+            PuestoSector = empleado.PuestoSector ?? "",
+            Activo = empleado.Activo,
+            CantidadOrdenes = 0
         });
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult> Update(int id, [FromBody] UpdateEmpleadoDto request)
+    public async Task<ActionResult> Update(Guid id, [FromBody] UpdateEmpleadoDto request)
     {
+        if (string.IsNullOrWhiteSpace(request.NombreCompleto))
+            return BadRequest(new { message = "El nombre completo es requerido" });
+
         var empleado = await _context.Empleados.FindAsync(id);
-        if (empleado == null) return NotFound();
+        if (empleado == null)
+            return NotFound(new { message = $"Empleado #{id} no encontrado" });
+
+        var legajoTrimmed = request.Legajo?.Trim();
+        if (!string.IsNullOrWhiteSpace(legajoTrimmed) &&
+            await _context.Empleados.AnyAsync(e => e.Id != id && e.Legajo != null && e.Legajo.ToLower() == legajoTrimmed.ToLower()))
+        {
+            return BadRequest(new { message = "El legajo ya está registrado en otro empleado" });
+        }
 
         empleado.NombreCompleto = request.NombreCompleto.Trim();
-        empleado.Legajo = request.Legajo.Trim();
-        empleado.PuestoSector = request.PuestoSector.Trim();
+        empleado.Legajo = string.IsNullOrWhiteSpace(legajoTrimmed) ? null : legajoTrimmed;
+        empleado.PuestoSector = string.IsNullOrWhiteSpace(request.PuestoSector) ? null : request.PuestoSector.Trim();
         empleado.Activo = request.Activo;
 
         await _context.SaveChangesAsync();

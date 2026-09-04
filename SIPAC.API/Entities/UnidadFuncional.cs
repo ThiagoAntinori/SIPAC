@@ -34,7 +34,9 @@ public class UnidadFuncional
 
             var pisoStr = !string.IsNullOrWhiteSpace(Piso) ? $" - Piso {Piso}" : "";
             var deptoStr = !string.IsNullOrWhiteSpace(Depto) ? $" \"{Depto}\"" : "";
-            return $"UF {Id} (Sec {SectorEscalera}{pisoStr}{deptoStr})";
+            var idStr = Id.ToString();
+            var ufNum = int.TryParse(idStr[..8], out var n) && n > 0 ? n.ToString() : idStr;
+            return $"UF {ufNum} (Sec {SectorEscalera}{pisoStr}{deptoStr})";
         }
     }
 

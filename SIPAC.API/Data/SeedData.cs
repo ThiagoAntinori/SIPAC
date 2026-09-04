@@ -64,31 +64,17 @@ public static class SeedData
             await context.SaveChangesAsync();
         }
 
-        // ── 3. Seed Responsables (BASI Fix) ───────────────────────────────────────
-        if (!await context.Responsables.AnyAsync())
-        {
-            var responsables = new List<Responsable>
-            {
-                new() { Nombre = "Juan Pérez", Activo = true },
-                new() { Nombre = "Carlos Rodríguez", Activo = true },
-                new() { Nombre = "Marcos Gómez", Activo = true },
-                new() { Nombre = "Lucía Fernández", Activo = true },
-                new() { Nombre = "Roberto Sánchez", Activo = true },
-                new() { Nombre = "Diego Martínez", Activo = true }
-            };
-            await context.Responsables.AddRangeAsync(responsables);
-            await context.SaveChangesAsync();
-        }
 
-        // ── 4. Seed Empleados (Compatibilidad previa) ────────────────────────────
+
+        // ── 3. Seed Empleados / Personal ──────────────────────────────────────────
         if (!await context.Empleados.AnyAsync())
         {
             var empleados = new List<Empleado>
             {
-                new() { NombreCompleto = "Juan Pérez", Legajo = "LEG-1001", PuestoSector = "Mantenimiento General", Activo = true },
-                new() { NombreCompleto = "Carlos Rodríguez", Legajo = "LEG-1002", PuestoSector = "Electricidad y Tableros", Activo = true },
-                new() { NombreCompleto = "Marcos Gómez", Legajo = "LEG-1003", PuestoSector = "Plomería y Calderas", Activo = true },
-                new() { NombreCompleto = "Lucía Fernández", Legajo = "LEG-1004", PuestoSector = "Pintura y Albañilería", Activo = true }
+                new() { Id = Guid.Parse("00000001-0002-0000-0000-000000000001"), NombreCompleto = "Claudio", Legajo = "LEG-001", PuestoSector = "Técnico Mantenimiento", Activo = true },
+                new() { Id = Guid.Parse("00000002-0002-0000-0000-000000000002"), NombreCompleto = "Silvio", Legajo = "LEG-002", PuestoSector = "Técnico Mantenimiento", Activo = true },
+                new() { Id = Guid.Parse("00000003-0002-0000-0000-000000000003"), NombreCompleto = "Hugo", Legajo = "LEG-003", PuestoSector = "Técnico Mantenimiento", Activo = true },
+                new() { Id = Guid.Parse("00000004-0002-0000-0000-000000000004"), NombreCompleto = "Alberto", Legajo = "LEG-004", PuestoSector = "Técnico Mantenimiento", Activo = true }
             };
             await context.Empleados.AddRangeAsync(empleados);
             await context.SaveChangesAsync();
@@ -277,9 +263,9 @@ public static class SeedData
         // ── 8. Seed Órdenes de Trabajo (BASI Fix) y Auditoría ─────────────────────
         if (!await context.OrdenesTrabajo.AnyAsync())
         {
-            var resp1 = await context.Responsables.FirstOrDefaultAsync(r => r.Nombre.Contains("Juan Pérez"));
-            var resp2 = await context.Responsables.FirstOrDefaultAsync(r => r.Nombre.Contains("Carlos Rodríguez"));
-            var resp3 = await context.Responsables.FirstOrDefaultAsync(r => r.Nombre.Contains("Lucía Fernández"));
+            var resp1 = await context.Empleados.FirstOrDefaultAsync(r => r.NombreCompleto.Contains("Claudio")) ?? await context.Empleados.FirstOrDefaultAsync();
+            var resp2 = await context.Empleados.FirstOrDefaultAsync(r => r.NombreCompleto.Contains("Silvio")) ?? resp1;
+            var resp3 = await context.Empleados.FirstOrDefaultAsync(r => r.NombreCompleto.Contains("Hugo")) ?? resp1;
 
             var catPlomeria = await context.CategoriasTrabajo.FirstOrDefaultAsync(c => c.Nombre.Contains("Plomería"));
             var catElectricidad = await context.CategoriasTrabajo.FirstOrDefaultAsync(c => c.Nombre.Contains("Electricidad"));

@@ -22,7 +22,7 @@ public class ResponsablesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<ResponsableDto>>> GetAll([FromQuery] bool? soloActivos)
     {
-        var query = _context.Responsables.AsNoTracking().AsQueryable();
+        var query = _context.Empleados.AsNoTracking().AsQueryable();
 
         if (soloActivos == true)
         {
@@ -30,11 +30,11 @@ public class ResponsablesController : ControllerBase
         }
 
         var list = await query
-            .OrderBy(r => r.Nombre)
+            .OrderBy(r => r.NombreCompleto)
             .Select(r => new ResponsableDto
             {
                 Id = r.Id,
-                Nombre = r.Nombre,
+                Nombre = r.NombreCompleto,
                 Activo = r.Activo,
                 CantidadOrdenes = r.OrdenesTrabajo.Count
             })
@@ -46,7 +46,7 @@ public class ResponsablesController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<ResponsableDto>> GetById(Guid id)
     {
-        var r = await _context.Responsables
+        var r = await _context.Empleados
             .AsNoTracking()
             .Include(x => x.OrdenesTrabajo)
             .FirstOrDefaultAsync(x => x.Id == id);
@@ -56,7 +56,7 @@ public class ResponsablesController : ControllerBase
         return Ok(new ResponsableDto
         {
             Id = r.Id,
-            Nombre = r.Nombre,
+            Nombre = r.NombreCompleto,
             Activo = r.Activo,
             CantidadOrdenes = r.OrdenesTrabajo.Count
         });
@@ -68,20 +68,21 @@ public class ResponsablesController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Nombre))
             return BadRequest(new { message = "El nombre del responsable es requerido" });
 
-        var responsable = new Responsable
+        var empleado = new Empleado
         {
-            Nombre = request.Nombre.Trim(),
+            Id = Guid.NewGuid(),
+            NombreCompleto = request.Nombre.Trim(),
             Activo = true
         };
 
-        _context.Responsables.Add(responsable);
+        _context.Empleados.Add(empleado);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetById), new { id = responsable.Id }, new ResponsableDto
+        return CreatedAtAction(nameof(GetById), new { id = empleado.Id }, new ResponsableDto
         {
-            Id = responsable.Id,
-            Nombre = responsable.Nombre,
-            Activo = responsable.Activo,
+            Id = empleado.Id,
+            Nombre = empleado.NombreCompleto,
+            Activo = empleado.Activo,
             CantidadOrdenes = 0
         });
     }
@@ -92,12 +93,12 @@ public class ResponsablesController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Nombre))
             return BadRequest(new { message = "El nombre del responsable es requerido" });
 
-        var responsable = await _context.Responsables.FindAsync(id);
-        if (responsable == null)
+        var empleado = await _context.Empleados.FindAsync(id);
+        if (empleado == null)
             return NotFound(new { message = $"Responsable #{id} no encontrado" });
 
-        responsable.Nombre = request.Nombre.Trim();
-        responsable.Activo = request.Activo;
+        empleado.NombreCompleto = request.Nombre.Trim();
+        empleado.Activo = request.Activo;
 
         await _context.SaveChangesAsync();
 

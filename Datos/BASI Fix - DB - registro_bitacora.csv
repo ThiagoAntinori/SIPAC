@@ -1,0 +1,259 @@
+id,orden_trabajo_id,tipo_operacion,detalle_cambio,fecha_hora
+1,1,ALTA,Se dio de alta la orden en estado Pendiente.,10/7/2026 11:34:52
+2,1,BAJA_FISICA,Eliminación definitiva por ser < 24hs en estado Pendiente.,10/7/2026 11:49:28
+3,1,ALTA,Se dio de alta la orden en estado Pendiente.,10/7/2026 11:50:01
+4,1,CAMBIO_ESTADO,El estado cambió de Pendiente a En Proceso.,10/7/2026 11:51:00
+5,1,CAMBIO_ESTADO,El estado cambió de En Proceso a Finalizado.,10/7/2026 11:51:23
+6,2,ALTA,Se dio de alta la orden en estado Pendiente.,10/7/2026 11:55:19
+7,3,ALTA,Se dio de alta la orden en estado Pendiente.,10/7/2026 11:58:53
+8,3,CAMBIO_ESTADO,El estado cambió de Pendiente a Suspendido.,10/7/2026 11:59:16
+9,3,BAJA_LOGICA,Eliminación lógica realizada. Registro archivado.,10/7/2026 12:03:29
+10,3,BAJA_LOGICA,Eliminación lógica realizada. Registro archivado.,10/7/2026 12:03:34
+11,2,BAJA_FISICA,Eliminación definitiva por ser < 24hs en estado Pendiente.,10/7/2026 12:03:57
+12,1,BAJA_LOGICA,Eliminación lógica realizada. Registro archivado.,10/7/2026 12:04:08
+13,4,ALTA,Se dio de alta la orden en estado Pendiente.,10/7/2026 12:06:49
+14,4,MODIFICACION,Se editaron los detalles generales de la orden.,10/7/2026 12:07:49
+15,5,ALTA,Se dio de alta la orden en estado Pendiente.,10/7/2026 12:28:24
+16,4,MODIFICACION,Se editaron los detalles generales de la orden.,10/7/2026 17:57:23
+17,6,ALTA,Se dio de alta la orden en estado Pendiente.,11/7/2026 10:59:25
+18,7,ALTA,Se dio de alta la orden en estado Pendiente.,11/7/2026 12:00:25
+19,8,ALTA,Se dio de alta la orden en estado Pendiente.,11/7/2026 12:07:21
+20,9,ALTA,Se dio de alta la orden en estado Pendiente.,13/7/2026 10:02:15
+21,10,ALTA,Se dio de alta la orden en estado Pendiente.,14/7/2026 16:09:52
+22,11,ALTA,Se dio de alta la orden en estado Pendiente.,14/7/2026 16:12:47
+23,12,ALTA,Se dio de alta la orden en estado Pendiente.,14/7/2026 16:17:06
+24,13,ALTA,Se dio de alta la orden en estado Pendiente.,14/7/2026 16:23:48
+25,14,ALTA,Se dio de alta la orden en estado Pendiente.,14/7/2026 18:23:34
+26,15,ALTA,Se dio de alta la orden en estado Pendiente.,14/7/2026 18:25:15
+27,16,ALTA,Se dio de alta la orden en estado Pendiente.,15/7/2026 9:50:00
+28,7,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,15/7/2026 10:05:12
+29,6,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,15/7/2026 10:07:00
+30,5,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,15/7/2026 10:07:43
+31,17,ALTA,Se dio de alta la orden en estado Pendiente.,16/7/2026 21:52:28
+32,18,ALTA,Se dio de alta la orden en estado Pendiente.,16/7/2026 22:16:02
+33,8,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,17/7/2026 9:10:55
+34,19,ALTA,Se dio de alta la orden en estado Pendiente.,17/7/2026 11:24:38
+35,20,ALTA,Se dio de alta la orden en estado Pendiente.,17/7/2026 21:53:17
+36,21,ALTA,Se dio de alta la orden en estado Pendiente.,17/7/2026 22:43:57
+37,22,ALTA,Se dio de alta la orden en estado Pendiente.,17/7/2026 22:52:42
+38,23,ALTA,Se dio de alta la orden en estado Pendiente.,18/7/2026 10:44:22
+39,24,ALTA,Se dio de alta la orden en estado Pendiente.,18/7/2026 10:45:23
+40,25,ALTA,Se dio de alta la orden en estado Pendiente.,18/7/2026 11:05:37
+41,10,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,18/7/2026 11:51:45
+42,21,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,18/7/2026 11:52:39
+43,11,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,18/7/2026 11:53:55
+44,17,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,18/7/2026 11:55:17
+45,16,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,18/7/2026 11:56:27
+46,19,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,18/7/2026 11:57:10
+47,8,MODIFICACION,Se editaron los detalles generales de la orden.,18/7/2026 11:58:06
+48,18,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,18/7/2026 11:58:48
+49,15,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,18/7/2026 11:59:31
+50,14,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,18/7/2026 12:01:25
+51,9,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,18/7/2026 12:30:59
+52,26,ALTA,Se dio de alta la orden en estado Pendiente.,18/7/2026 12:48:26
+53,27,ALTA,Se dio de alta la orden en estado Pendiente.,19/7/2026 16:30:28
+54,25,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,20/7/2026 9:45:22
+55,20,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,20/7/2026 9:50:36
+56,28,ALTA,Se dio de alta la orden en estado Pendiente.,20/7/2026 11:52:23
+57,22,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,21/7/2026 10:30:58
+58,29,ALTA,Se dio de alta la orden en estado Pendiente.,21/7/2026 12:32:00
+59,30,ALTA,Se dio de alta la orden en estado Pendiente.,21/7/2026 12:33:05
+60,31,ALTA,Se dio de alta la orden en estado Pendiente.,21/7/2026 13:10:49
+61,32,ALTA,Se dio de alta la orden en estado Pendiente.,21/7/2026 16:19:05
+62,24,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,22/7/2026 10:49:57
+63,27,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,22/7/2026 10:51:24
+64,33,ALTA,Se dio de alta la orden en estado Pendiente.,22/7/2026 12:40:40
+65,26,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,24/7/2026 0:19:20
+66,13,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,24/7/2026 0:20:21
+67,32,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,24/7/2026 0:21:19
+68,34,ALTA,Se dio de alta la orden en estado Pendiente.,24/7/2026 18:09:41
+69,35,ALTA,Se dio de alta la orden en estado Pendiente.,24/7/2026 18:11:13
+70,36,ALTA,Se dio de alta la orden en estado Pendiente.,25/7/2026 11:00:55
+71,37,ALTA,Se dio de alta la orden en estado Pendiente.,25/7/2026 11:13:49
+72,38,ALTA,Se dio de alta la orden en estado Pendiente.,25/7/2026 11:21:21
+73,39,ALTA,Se dio de alta la orden en estado Pendiente.,25/7/2026 12:19:44
+74,29,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,25/7/2026 13:20:07
+75,40,ALTA,Se dio de alta la orden en estado Pendiente.,25/7/2026 13:28:06
+76,41,ALTA,Se dio de alta la orden en estado Pendiente.,27/7/2026 19:18:10
+77,42,ALTA,Se dio de alta la orden en estado Pendiente.,27/7/2026 19:19:25
+78,37,MODIFICACION,Se editaron los detalles generales de la orden.,27/7/2026 23:33:19
+79,43,ALTA,Se dio de alta la orden en estado Pendiente.,27/7/2026 23:36:56
+80,33,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,27/7/2026 23:38:44
+81,44,ALTA,Se dio de alta la orden en estado Pendiente.,28/7/2026 9:14:15
+82,45,ALTA,Se dio de alta la orden en estado Pendiente.,28/7/2026 12:00:24
+83,45,MODIFICACION,Se editaron los detalles generales de la orden.,28/7/2026 12:03:48
+84,46,ALTA,Se dio de alta la orden en estado Pendiente.,28/7/2026 17:00:26
+85,23,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,28/7/2026 17:29:37
+86,47,ALTA,Se dio de alta la orden en estado Pendiente.,28/7/2026 17:52:28
+87,48,ALTA,Se dio de alta la orden en estado Pendiente.,28/7/2026 19:05:55
+88,31,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,29/7/2026 10:43:34
+89,34,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,29/7/2026 10:44:19
+90,49,ALTA,Se dio de alta la orden en estado Pendiente.,31/7/2026 23:21:11
+91,50,ALTA,Se dio de alta la orden en estado Pendiente.,1/8/2026 9:41:22
+92,51,ALTA,Se dio de alta la orden en estado Pendiente.,1/8/2026 10:21:55
+93,52,ALTA,Se dio de alta la orden en estado Pendiente.,1/8/2026 11:53:00
+94,44,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,2/8/2026 22:49:33
+95,47,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,2/8/2026 22:50:27
+96,46,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,2/8/2026 22:51:05
+97,4,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,2/8/2026 22:51:42
+98,48,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,2/8/2026 22:53:07
+99,40,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,2/8/2026 23:15:00
+100,43,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,2/8/2026 23:17:23
+101,43,MODIFICACION,Se editaron los detalles generales de la orden.,2/8/2026 23:17:53
+102,38,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,2/8/2026 23:18:52
+103,37,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,2/8/2026 23:19:41
+104,42,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,2/8/2026 23:20:49
+105,35,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,2/8/2026 23:29:55
+106,53,ALTA,Se dio de alta la orden en estado Pendiente.,2/8/2026 23:39:56
+107,53,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,3/8/2026 15:10:32
+108,52,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,3/8/2026 15:11:48
+109,50,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,3/8/2026 15:12:15
+110,49,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,3/8/2026 15:12:59
+111,45,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,3/8/2026 15:14:19
+112,41,CAMBIO_ESTADO,El estado cambió de Pendiente a Suspendido.,3/8/2026 15:15:32
+113,30,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,3/8/2026 15:16:45
+114,39,CAMBIO_ESTADO,El estado cambió de Pendiente a Suspendido.,3/8/2026 15:18:42
+115,54,ALTA,Se dio de alta la orden en estado Pendiente.,3/8/2026 22:03:06
+116,55,ALTA,Se dio de alta la orden en estado Pendiente.,4/8/2026 10:46:26
+117,56,ALTA,Se dio de alta la orden en estado Pendiente.,4/8/2026 10:48:26
+118,57,ALTA,Se dio de alta la orden en estado Pendiente.,4/8/2026 10:50:04
+119,58,ALTA,Se dio de alta la orden en estado Pendiente.,4/8/2026 11:12:48
+120,58,MODIFICACION,Se editaron los detalles generales de la orden.,4/8/2026 16:33:32
+121,59,ALTA,Se dio de alta la orden en estado Pendiente.,4/8/2026 18:11:15
+122,56,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,4/8/2026 23:05:15
+123,54,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,4/8/2026 23:06:31
+124,51,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,4/8/2026 23:07:20
+125,60,ALTA,Se dio de alta la orden en estado Pendiente.,5/8/2026 21:19:47
+126,57,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,6/8/2026 11:42:26
+127,61,ALTA,Se dio de alta la orden en estado Pendiente.,8/8/2026 12:14:46
+128,62,ALTA,Se dio de alta la orden en estado Pendiente.,8/8/2026 12:15:31
+129,63,ALTA,Se dio de alta la orden en estado Pendiente.,8/8/2026 12:16:07
+130,64,ALTA,Se dio de alta la orden en estado Pendiente.,8/8/2026 12:16:48
+131,65,ALTA,Se dio de alta la orden en estado Pendiente.,8/8/2026 12:17:44
+132,66,ALTA,Se dio de alta la orden en estado Pendiente.,10/8/2026 21:58:13
+133,67,ALTA,Se dio de alta la orden en estado Pendiente.,10/8/2026 23:09:58
+134,60,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,10/8/2026 23:49:30
+135,55,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,10/8/2026 23:50:16
+136,55,MODIFICACION,Se editaron los detalles generales de la orden.,11/8/2026 9:53:56
+137,58,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,11/8/2026 9:55:54
+138,68,ALTA,Se dio de alta la orden en estado Pendiente.,11/8/2026 19:43:22
+139,68,MODIFICACION,Se editaron los detalles generales de la orden.,11/8/2026 19:43:45
+140,69,ALTA,Se dio de alta la orden en estado Pendiente.,12/8/2026 11:22:12
+141,70,ALTA,Se dio de alta la orden en estado Pendiente.,12/8/2026 12:22:02
+142,71,ALTA,Se dio de alta la orden en estado Pendiente.,13/8/2026 15:12:46
+143,72,ALTA,Se dio de alta la orden en estado Pendiente.,14/8/2026 11:38:20
+144,73,ALTA,Se dio de alta la orden en estado Pendiente.,14/8/2026 12:25:14
+145,70,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,15/8/2026 12:24:32
+146,67,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,15/8/2026 12:25:26
+147,66,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,15/8/2026 12:25:58
+148,69,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,15/8/2026 12:26:28
+149,68,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,15/8/2026 12:26:59
+150,74,ALTA,Se dio de alta la orden en estado Pendiente.,17/8/2026 11:31:27
+151,75,ALTA,Se dio de alta la orden en estado Pendiente.,17/8/2026 22:55:11
+152,76,ALTA,Se dio de alta la orden en estado Pendiente.,17/8/2026 23:06:03
+153,28,CAMBIO_ESTADO,El estado cambió de Pendiente a Suspendido.,17/8/2026 23:13:32
+154,12,CAMBIO_ESTADO,El estado cambió de Pendiente a Suspendido.,17/8/2026 23:14:12
+155,77,ALTA,Se dio de alta la orden en estado Pendiente.,17/8/2026 23:16:30
+156,78,ALTA,Se dio de alta la orden en estado Pendiente.,18/8/2026 16:22:27
+157,79,ALTA,Se dio de alta la orden en estado Pendiente.,18/8/2026 17:14:57
+158,80,ALTA,Se dio de alta la orden en estado Pendiente.,18/8/2026 18:00:54
+159,81,ALTA,Se dio de alta la orden en estado Pendiente.,18/8/2026 18:01:23
+160,82,ALTA,Se dio de alta la orden en estado Pendiente.,18/8/2026 19:23:26
+161,83,ALTA,Se dio de alta la orden en estado Pendiente.,18/8/2026 19:23:54
+162,84,ALTA,Se dio de alta la orden en estado Pendiente.,18/8/2026 20:00:46
+163,85,ALTA,Se dio de alta la orden en estado Pendiente.,19/8/2026 18:20:41
+164,86,ALTA,Se dio de alta la orden en estado Pendiente.,20/8/2026 11:06:26
+165,87,ALTA,Se dio de alta la orden en estado Pendiente.,20/8/2026 11:12:49
+166,88,ALTA,Se dio de alta la orden en estado Pendiente.,20/8/2026 11:16:19
+167,89,ALTA,Se dio de alta la orden en estado Pendiente.,20/8/2026 11:21:54
+168,90,ALTA,Se dio de alta la orden en estado Pendiente.,23/8/2026 12:42:36
+169,91,ALTA,Se dio de alta la orden en estado Pendiente.,23/8/2026 12:43:55
+170,92,ALTA,Se dio de alta la orden en estado Pendiente.,23/8/2026 12:44:57
+171,93,ALTA,Se dio de alta la orden en estado Pendiente.,23/8/2026 12:46:00
+172,94,ALTA,Se dio de alta la orden en estado Pendiente.,23/8/2026 12:50:43
+173,95,ALTA,Se dio de alta la orden en estado Pendiente.,24/8/2026 10:42:10
+174,96,ALTA,Se dio de alta la orden en estado Pendiente.,24/8/2026 10:53:26
+175,97,ALTA,Se dio de alta la orden en estado Pendiente.,24/8/2026 11:38:24
+176,98,ALTA,Se dio de alta la orden en estado Pendiente.,24/8/2026 12:25:24
+177,87,MODIFICACION,Se editaron los detalles generales de la orden.,24/8/2026 15:57:11
+178,87,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,24/8/2026 15:57:34
+179,97,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,24/8/2026 15:59:11
+180,90,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,24/8/2026 16:01:02
+181,99,ALTA,Se dio de alta la orden en estado Pendiente.,24/8/2026 19:55:08
+182,88,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,24/8/2026 23:10:30
+183,80,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,24/8/2026 23:11:21
+184,83,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,24/8/2026 23:12:18
+185,89,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,24/8/2026 23:12:48
+186,74,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,24/8/2026 23:14:00
+187,82,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,24/8/2026 23:14:37
+188,78,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,24/8/2026 23:15:29
+189,100,ALTA,Se dio de alta la orden en estado Pendiente.,25/8/2026 11:10:49
+190,101,ALTA,Se dio de alta la orden en estado Pendiente.,25/8/2026 11:13:39
+191,102,ALTA,Se dio de alta la orden en estado Pendiente.,25/8/2026 11:19:04
+192,103,ALTA,Se dio de alta la orden en estado Pendiente.,25/8/2026 11:49:45
+193,104,ALTA,Se dio de alta la orden en estado Pendiente.,25/8/2026 14:18:56
+194,105,ALTA,Se dio de alta la orden en estado Pendiente.,25/8/2026 16:15:35
+195,106,ALTA,Se dio de alta la orden en estado Pendiente.,25/8/2026 16:18:53
+196,107,ALTA,Se dio de alta la orden en estado Pendiente.,25/8/2026 17:29:03
+197,108,ALTA,Se dio de alta la orden en estado Pendiente.,25/8/2026 19:20:54
+198,109,ALTA,Se dio de alta la orden en estado Pendiente.,26/8/2026 19:03:25
+199,108,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,26/8/2026 21:43:38
+200,104,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,26/8/2026 21:44:28
+201,98,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,26/8/2026 21:46:35
+202,95,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,26/8/2026 21:48:13
+203,93,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,26/8/2026 21:49:42
+204,92,CAMBIO_ESTADO,El estado cambió de Pendiente a Suspendido.,26/8/2026 21:50:21
+205,86,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,26/8/2026 21:52:17
+206,110,ALTA,Se dio de alta la orden en estado Pendiente.,27/8/2026 10:48:21
+207,111,ALTA,Se dio de alta la orden en estado Pendiente.,27/8/2026 11:19:48
+208,112,ALTA,Se dio de alta la orden en estado Pendiente.,27/8/2026 19:01:39
+209,113,ALTA,Se dio de alta la orden en estado Pendiente.,27/8/2026 19:02:08
+210,112,MODIFICACION,Se editaron los detalles generales de la orden.,27/8/2026 19:04:34
+211,112,MODIFICACION,Se editaron los detalles generales de la orden.,27/8/2026 19:06:18
+212,85,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,27/8/2026 19:10:06
+213,81,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,27/8/2026 19:11:00
+214,79,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,27/8/2026 19:11:52
+215,59,CAMBIO_ESTADO,El estado cambió de Pendiente a Suspendido.,27/8/2026 19:12:46
+216,113,MODIFICACION,Se editaron los detalles generales de la orden.,27/8/2026 22:39:05
+217,114,ALTA,Se dio de alta la orden en estado Pendiente.,28/8/2026 11:04:23
+218,75,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,28/8/2026 12:12:44
+219,99,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,29/8/2026 11:04:23
+220,110,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,29/8/2026 11:06:03
+221,103,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,29/8/2026 11:07:17
+222,105,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,29/8/2026 11:08:46
+223,111,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,29/8/2026 11:09:19
+224,109,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,29/8/2026 11:10:08
+225,106,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,29/8/2026 11:10:54
+226,112,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,29/8/2026 11:11:46
+227,113,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,29/8/2026 11:14:13
+228,91,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,29/8/2026 11:15:25
+229,72,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,29/8/2026 11:16:39
+230,76,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,29/8/2026 11:17:20
+231,115,ALTA,Se dio de alta la orden en estado Pendiente.,29/8/2026 11:25:24
+232,116,ALTA,Se dio de alta la orden en estado Pendiente.,29/8/2026 11:31:30
+233,117,ALTA,Se dio de alta la orden en estado Pendiente.,29/8/2026 13:39:21
+234,118,ALTA,Se dio de alta la orden en estado Pendiente.,30/8/2026 22:43:06
+235,96,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,30/8/2026 22:45:26
+236,119,ALTA,Se dio de alta la orden en estado Pendiente.,30/8/2026 22:46:47
+237,120,ALTA,Se dio de alta la orden en estado Pendiente.,31/8/2026 12:28:52
+238,121,ALTA,Se dio de alta la orden en estado Pendiente.,31/8/2026 12:32:03
+239,122,ALTA,Se dio de alta la orden en estado Pendiente.,31/8/2026 22:16:32
+240,120,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,31/8/2026 22:30:40
+241,119,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,31/8/2026 22:31:43
+242,123,ALTA,Se dio de alta la orden en estado Pendiente.,31/8/2026 22:40:11
+243,122,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,1/9/2026 15:46:46
+244,117,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,1/9/2026 15:47:29
+245,114,CAMBIO_ESTADO,El estado cambió de Pendiente a Suspendido.,1/9/2026 15:48:25
+246,107,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,1/9/2026 15:49:10
+247,102,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,1/9/2026 15:50:11
+248,94,CAMBIO_ESTADO,El estado cambió de Pendiente a Cancelado.,1/9/2026 15:50:49
+249,124,ALTA,Se dio de alta la orden en estado Pendiente.,1/9/2026 18:31:24
+250,125,ALTA,Se dio de alta la orden en estado Pendiente.,1/9/2026 19:03:45
+251,121,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,1/9/2026 23:54:41
+252,126,ALTA,Se dio de alta la orden en estado Pendiente.,2/9/2026 14:44:14
+253,124,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,2/9/2026 23:02:35
+254,125,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,2/9/2026 23:03:04
+255,123,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,2/9/2026 23:04:19
+256,115,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,2/9/2026 23:05:05
+257,73,CAMBIO_ESTADO,El estado cambió de Pendiente a Finalizado.,2/9/2026 23:09:09
+258,127,ALTA,Se dio de alta la orden en estado Pendiente.,3/9/2026 17:00:32

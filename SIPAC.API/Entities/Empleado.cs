@@ -8,18 +8,27 @@ public class Empleado
 {
     [Key]
     [Column("id")]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     [Column("nombre_completo")]
     public string NombreCompleto { get; set; } = string.Empty;
 
+    // Alias para compatibilidad con código existente que use .Nombre
+    [NotMapped]
+    public string Nombre
+    {
+        get => NombreCompleto;
+        set => NombreCompleto = value;
+    }
+
     [Column("legajo")]
-    public string Legajo { get; set; } = string.Empty;
+    public string? Legajo { get; set; }
 
     [Column("puesto_sector")]
-    public string PuestoSector { get; set; } = string.Empty;
+    public string? PuestoSector { get; set; }
 
     [Column("activo")]
     public bool Activo { get; set; } = true;
-}
 
+    public ICollection<OrdenTrabajo> OrdenesTrabajo { get; set; } = new List<OrdenTrabajo>();
+}

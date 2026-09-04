@@ -66,7 +66,7 @@ public class OrdenesTrabajoController : ControllerBase
                 o.ProblemaReportado.ToLower().Contains(s) ||
                 (o.SolucionRealizada != null && o.SolucionRealizada.ToLower().Contains(s)) ||
                 (o.Observaciones != null && o.Observaciones.ToLower().Contains(s)) ||
-                (o.Responsable != null && o.Responsable.Nombre.ToLower().Contains(s)) ||
+                (o.Responsable != null && o.Responsable.NombreCompleto.ToLower().Contains(s)) ||
                 (o.Categoria != null && o.Categoria.Nombre.ToLower().Contains(s)) ||
                 (o.UnidadFuncional != null && (
                     o.UnidadFuncional.Id.ToString().Contains(s) ||
@@ -127,7 +127,7 @@ public class OrdenesTrabajoController : ControllerBase
         if (uf == null)
             return BadRequest(new { message = $"La Unidad Funcional #{request.UnidadFuncionalId} no existe" });
 
-        var responsable = await _context.Responsables.FindAsync(request.ResponsableId);
+        var responsable = await _context.Empleados.FindAsync(request.ResponsableId);
         if (responsable == null || !responsable.Activo)
             return BadRequest(new { message = "El responsable seleccionado no existe o está inactivo" });
 
@@ -204,7 +204,7 @@ public class OrdenesTrabajoController : ControllerBase
             }
         }
 
-        var responsable = await _context.Responsables.FindAsync(request.ResponsableId);
+        var responsable = await _context.Empleados.FindAsync(request.ResponsableId);
         if (responsable == null)
             return BadRequest(new { message = "El responsable seleccionado no existe" });
 

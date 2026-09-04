@@ -71,7 +71,7 @@ export const empleadosApi = {
   getAll: (params?: { soloActivos?: boolean }) =>
     api.get<Empleado[]>('/empleados', { params }).then((r) => r.data),
   create: (data: Partial<Empleado>) => api.post<Empleado>('/empleados', data).then((r) => r.data),
-  update: (id: number, data: Partial<Empleado>) => api.put(`/empleados/${id}`, data).then((r) => r.data),
+  update: (id: string, data: Partial<Empleado>) => api.put(`/empleados/${id}`, data).then((r) => r.data),
 };
 
 export const responsablesApi = {

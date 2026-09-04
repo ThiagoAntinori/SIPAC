@@ -60,7 +60,7 @@ public class EgresosController : ControllerBase
                 UnidadFuncionalDisplay = e.OrdenTrabajo != null && e.OrdenTrabajo.UnidadFuncional != null
                     ? e.OrdenTrabajo.UnidadFuncional.DisplayNombre
                     : "",
-                EmpleadoNombre = e.OrdenTrabajo != null && e.OrdenTrabajo.Responsable != null ? e.OrdenTrabajo.Responsable.Nombre : "",
+                EmpleadoNombre = e.OrdenTrabajo != null && e.OrdenTrabajo.Responsable != null ? e.OrdenTrabajo.Responsable.NombreCompleto : "",
                 Cantidad = e.Cantidad,
                 FechaHora = e.FechaHora,
                 UsuarioId = e.UsuarioId,
@@ -150,7 +150,7 @@ public class EgresosController : ControllerBase
             OrdenTrabajoId = egreso.OrdenTrabajoId,
             NumeroOT = ot.NumeroOT,
             UnidadFuncionalDisplay = ufDisplay,
-            EmpleadoNombre = ot.Responsable?.Nombre ?? "",
+            EmpleadoNombre = ot.Responsable?.NombreCompleto ?? "",
             Cantidad = egreso.Cantidad,
             FechaHora = egreso.FechaHora,
             UsuarioId = egreso.UsuarioId,

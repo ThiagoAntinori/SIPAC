@@ -30,14 +30,14 @@ public class UnidadesFuncionalesController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(sector))
         {
-            var s = sector.Trim();
-            query = query.Where(u => u.SectorEscalera.ToLower() == s.ToLower());
+            var s = sector.Trim().ToLower();
+            query = query.Where(u => u.SectorEscalera.ToLower() == s);
         }
 
         if (!string.IsNullOrWhiteSpace(piso))
         {
-            var p = piso.Trim();
-            query = query.Where(u => u.Piso != null && u.Piso.ToLower() == p.ToLower());
+            var p = piso.Trim().ToLower();
+            query = query.Where(u => u.Piso != null && u.Piso.ToLower() == p);
         }
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -184,7 +184,7 @@ public class UnidadesFuncionalesController : ControllerBase
             IdOt = o.Id,
             NumeroOT = o.NumeroOT,
             CategoriaNombre = o.Categoria?.Nombre ?? "",
-            ResponsableNombre = o.Responsable?.Nombre ?? "",
+            ResponsableNombre = o.Responsable?.NombreCompleto ?? "",
             ProblemaReportado = o.ProblemaReportado,
             SolucionRealizada = o.SolucionRealizada,
             Estado = o.Estado,

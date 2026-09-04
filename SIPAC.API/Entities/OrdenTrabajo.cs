@@ -19,7 +19,7 @@ public class OrdenTrabajo
 
     [Column("responsable_id")]
     public Guid ResponsableId { get; set; }
-    public Responsable? Responsable { get; set; }
+    public Empleado? Responsable { get; set; }
 
     [Column("categoria_id")]
     public Guid CategoriaId { get; set; }

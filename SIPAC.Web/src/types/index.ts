@@ -32,11 +32,12 @@ export interface Articulo {
 }
 
 export interface Empleado {
-  id: number;
+  id: string;
   nombreCompleto: string;
   legajo: string;
   puestoSector: string;
   activo: boolean;
+  cantidadOrdenes?: number;
 }
 
 export interface Responsable {

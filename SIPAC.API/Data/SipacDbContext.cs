@@ -12,7 +12,6 @@ public class SipacDbContext : DbContext
     public DbSet<Articulo> Articulos => Set<Articulo>();
     public DbSet<Empleado> Empleados => Set<Empleado>();
     public DbSet<UnidadFuncional> UnidadesFuncionales => Set<UnidadFuncional>();
-    public DbSet<Responsable> Responsables => Set<Responsable>();
     public DbSet<CategoriaTrabajo> CategoriasTrabajo => Set<CategoriaTrabajo>();
     public DbSet<OrdenTrabajo> OrdenesTrabajo => Set<OrdenTrabajo>();
     public DbSet<RegistroBitacoraOt> BitacoraOt => Set<RegistroBitacoraOt>();
@@ -28,7 +27,7 @@ public class SipacDbContext : DbContext
 
         // Mapeo explícito de tablas
         modelBuilder.Entity<UnidadFuncional>().ToTable("unidades_funcionales");
-        modelBuilder.Entity<Responsable>().ToTable("responsables");
+        modelBuilder.Entity<Empleado>().ToTable("empleados");
         modelBuilder.Entity<CategoriaTrabajo>().ToTable("categorias_trabajo");
         modelBuilder.Entity<OrdenTrabajo>().ToTable("ordenes_trabajo");
         modelBuilder.Entity<RegistroBitacoraOt>().ToTable("bitacora_logs");
@@ -40,7 +39,6 @@ public class SipacDbContext : DbContext
         modelBuilder.Entity<AjusteInventario>().ToTable("ajustes_inventario");
         modelBuilder.Entity<Usuario>().ToTable("usuarios");
         modelBuilder.Entity<AuditLog>().ToTable("audit_logs");
-        modelBuilder.Entity<Empleado>().ToTable("empleados");
 
         // Articulo
         modelBuilder.Entity<Articulo>()
@@ -71,9 +69,9 @@ public class SipacDbContext : DbContext
         modelBuilder.Entity<UnidadFuncional>()
             .HasIndex(u => new { u.SectorEscalera, u.Piso, u.Depto });
 
-        // Responsable
-        modelBuilder.Entity<Responsable>()
-            .HasKey(r => r.Id);
+        // Empleado
+        modelBuilder.Entity<Empleado>()
+            .HasKey(e => e.Id);
 
         // CategoriaTrabajo
         modelBuilder.Entity<CategoriaTrabajo>()
@@ -124,7 +122,9 @@ public class SipacDbContext : DbContext
         modelBuilder.Entity<Usuario>()
             .HasIndex(u => u.Username).IsUnique();
         modelBuilder.Entity<Empleado>()
-            .HasIndex(e => e.Legajo).IsUnique();
+            .HasIndex(e => e.Legajo)
+            .IsUnique()
+            .HasFilter("[legajo] IS NOT NULL AND [legajo] != ''");
 
         // Prevent cascade delete loops
         modelBuilder.Entity<AuditLog>()
@@ -164,4 +164,3 @@ public class SipacDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
-
