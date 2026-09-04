@@ -108,6 +108,12 @@ public class ComprasController : ControllerBase
         _context.Compras.Add(compra);
         await _context.SaveChangesAsync();
 
+        var usuario = await _context.Usuarios.FindAsync(userId);
+        var artIds = compra.Detalles.Select(d => d.ArticuloId).Distinct().ToList();
+        var articulosMap = await _context.Articulos
+            .Where(a => artIds.Contains(a.Id))
+            .ToDictionaryAsync(a => a.Id, a => new { a.Nombre, a.UnidadMedida });
+
         return Ok(new CompraDto
         {
             Id = compra.Id,
@@ -115,8 +121,17 @@ public class ComprasController : ControllerBase
             FechaCompra = compra.FechaCompra,
             FechaCarga = compra.FechaCarga,
             UsuarioId = compra.UsuarioId,
+            UsuarioNombre = usuario?.NombreCompleto ?? "",
             FotoComprobanteUrl = compra.FotoComprobanteUrl,
-            ObservacionesDiferencia = compra.ObservacionesDiferencia
+            ObservacionesDiferencia = compra.ObservacionesDiferencia,
+            Detalles = compra.Detalles.Select(d => new DetalleCompraDto
+            {
+                Id = d.Id,
+                ArticuloId = d.ArticuloId,
+                ArticuloNombre = articulosMap.TryGetValue(d.ArticuloId, out var artInfo) ? artInfo.Nombre : "",
+                UnidadMedida = articulosMap.TryGetValue(d.ArticuloId, out var artInfo2) ? artInfo2.UnidadMedida : "",
+                CantidadRecibida = d.CantidadRecibida
+            }).ToList()
         });
     }
 }

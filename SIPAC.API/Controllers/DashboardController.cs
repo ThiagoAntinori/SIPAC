@@ -45,11 +45,11 @@ public class DashboardController : ControllerBase
             .ToListAsync();
 
         var ordenesActivas = await _context.OrdenesTrabajo
-            .CountAsync(o => o.Estado == "Pendiente" || o.Estado == "En Proceso");
+            .CountAsync(o => o.Estado.ToLower() == "pendiente" || o.Estado.ToLower() == "en proceso");
 
         var cincoDiasAtras = DateTime.UtcNow.AddDays(-5);
         var alertasInactividad = await _context.OrdenesTrabajo
-            .CountAsync(o => o.Estado == "Pendiente" && o.CreatedAt <= cincoDiasAtras);
+            .CountAsync(o => o.Estado.ToLower() == "pendiente" && o.CreatedAt <= cincoDiasAtras);
 
         var hoy = DateTime.UtcNow.Date;
         var egresosHoy = await _context.EgresosConsumo

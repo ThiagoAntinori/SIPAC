@@ -1,0 +1,45 @@
+# ==============================================================================
+# Dockerignore para SIPAC
+# Evita subir dependencias locales y archivos temporales al build context
+# ==============================================================================
+
+# Git & control de versiones
+.git
+.github
+.gitignore
+
+# IDEs y editores
+.vscode
+.idea
+*.suo
+*.user
+
+# .NET / C# compilaciones y artefactos
+**/bin/
+**/obj/
+temp_build/
+
+# Node.js / React artefactos
+**/node_modules/
+**/dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Bases de datos locales SQLite y dumps
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+sipac_dev.db
+sipac.db
+
+# Archivos de entorno con credenciales secretas
+.env
+.env.local
+.env.*.local
+
+# Documentación no requerida en runtime
+README.md
+RENDER_DEPLOY.md
+

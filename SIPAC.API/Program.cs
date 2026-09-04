@@ -11,6 +11,14 @@ LoadDotEnv();
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ── Port Binding (Render / Cloud Containers) ─────────────────────────────────
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrWhiteSpace(port))
+{
+    Console.WriteLine($"[Config] Vinculando Kestrel al puerto dinámico: {port}");
+    builder.WebHost.UseUrls($"http://*:{port}");
+}
+
 // ── Database ────────────────────────────────────────────────────────────────
 var env = builder.Environment.EnvironmentName;
 var isProduction = builder.Environment.IsProduction();
@@ -65,7 +73,10 @@ builder.Services.AddDbContext<SipacDbContext>((sp, options) =>
 });
 
 // ── JWT Authentication ───────────────────────────────────────────────────────
-var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "SIPAC_DEV_SECRET_KEY_CHANGE_IN_PRODUCTION_32CHARS!";
+var jwtSecret = builder.Configuration["Jwt:Secret"]
+    ?? Environment.GetEnvironmentVariable("JWT_SECRET")
+    ?? Environment.GetEnvironmentVariable("JWT__SECRET")
+    ?? "SIPAC_DEV_SECRET_KEY_CHANGE_IN_PRODUCTION_32CHARS!";
 var key = Encoding.UTF8.GetBytes(jwtSecret);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -105,17 +116,31 @@ builder.Services.AddSingleton<NotificacionService>();
 builder.Services.AddHttpClient();
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-    ?? new[] { "http://localhost:5173", "http://localhost:3000", "http://localhost:4173" };
+var allowedOriginsEnv = Environment.GetEnvironmentVariable("ALLOWED_ORIGINS");
+var defaultOrigins = new[] { "http://localhost:5173", "http://localhost:3000", "http://localhost:4173" };
+var configuredOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? defaultOrigins;
+
+var allowedOrigins = !string.IsNullOrWhiteSpace(allowedOriginsEnv)
+    ? allowedOriginsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    : configuredOrigins;
 
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+        if (allowedOrigins.Contains("*"))
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
+        else
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        }
     });
 });
 
@@ -151,7 +176,10 @@ builder.Services.AddControllers();
 var app = builder.Build();
 
 // ── Middleware pipeline ───────────────────────────────────────────────────────
-if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
+var enableSwagger = builder.Configuration.GetValue<bool>("EnableSwagger", false)
+    || string.Equals(Environment.GetEnvironmentVariable("ENABLE_SWAGGER"), "true", StringComparison.OrdinalIgnoreCase);
+
+if (app.Environment.IsDevelopment() || app.Environment.IsStaging() || enableSwagger)
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
@@ -160,6 +188,10 @@ if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
         c.RoutePrefix = "swagger";
     });
 }
+
+// ── Health checks para Render y orquestadores ─────────────────────────────────
+app.MapGet("/healthz", () => Results.Ok(new { status = "healthy", service = "SIPAC API", timestamp = DateTime.UtcNow }));
+app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", service = "SIPAC API", timestamp = DateTime.UtcNow }));
 
 app.UseCors();
 app.UseAuthentication();
@@ -280,6 +312,7 @@ static string? ConvertPostgresUriToNpgsql(string? connectionString)
                     }
                 }
 
+                var isSslDisabled = trimmed.Contains("sslmode=disable", StringComparison.OrdinalIgnoreCase);
                 var builder = new Npgsql.NpgsqlConnectionStringBuilder
                 {
                     Host = host,
@@ -287,11 +320,11 @@ static string? ConvertPostgresUriToNpgsql(string? connectionString)
                     Database = database,
                     Username = username,
                     Password = password,
-                    SslMode = Npgsql.SslMode.Require,
+                    SslMode = isSslDisabled ? Npgsql.SslMode.Disable : Npgsql.SslMode.Prefer,
                     Pooling = true
                 };
 
-                Console.WriteLine($"[Database] Conectando a PostgreSQL ({builder.Host}:{builder.Port}/{builder.Database}) como usuario '{builder.Username}'");
+                Console.WriteLine($"[Database] Conectando a PostgreSQL ({builder.Host}:{builder.Port}/{builder.Database}) como usuario '{builder.Username}' (SslMode={builder.SslMode})");
                 return builder.ConnectionString;
             }
         }

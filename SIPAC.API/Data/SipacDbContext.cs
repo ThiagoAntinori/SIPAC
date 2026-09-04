@@ -124,7 +124,7 @@ public class SipacDbContext : DbContext
         modelBuilder.Entity<Empleado>()
             .HasIndex(e => e.Legajo)
             .IsUnique()
-            .HasFilter("[legajo] IS NOT NULL AND [legajo] != ''");
+            .HasFilter("\"legajo\" IS NOT NULL AND \"legajo\" != ''");
 
         // Prevent cascade delete loops
         modelBuilder.Entity<AuditLog>()

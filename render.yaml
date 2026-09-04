@@ -1,0 +1,42 @@
+# ==============================================================================
+# Render Blueprint (Infrastructure as Code) para SIPAC
+# Despliegue en 1-clic con Docker
+# ==============================================================================
+
+services:
+  - type: web
+    name: sipac
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ENABLE_SWAGGER
+        value: "true"
+      - key: JWT__SECRET
+        generateValue: true
+      - key: JWT__ISSUER
+        value: sipac-api
+      - key: JWT__AUDIENCE
+        value: sipac-web
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      # Configurar si se usa Turso:
+      # - key: TURSO_DATABASE_URL
+      #   sync: false
+      # - key: TURSO_AUTH_TOKEN
+      #   sync: false
+      # Configurar si se usa PostgreSQL (Supabase o Render Postgres):
+      # - key: DATABASE_URL
+      #   sync: false
+      # Configurar Cloudinary para comprobantes persistentes:
+      # - key: CLOUDINARY__CLOUDNAME
+      #   sync: false
+      # - key: CLOUDINARY__APIKEY
+      #   sync: false
+      # - key: CLOUDINARY__APISECRET
+      #   sync: false
+

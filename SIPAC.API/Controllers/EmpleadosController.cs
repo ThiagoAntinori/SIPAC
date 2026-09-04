@@ -84,8 +84,7 @@ public class EmpleadosController : ControllerBase
             return BadRequest(new { message = "El nombre completo es requerido" });
 
         var empleado = await _context.Empleados.FindAsync(id);
-        if (empleado == null)
-            return NotFound(new { message = $"Empleado #{id} no encontrado" });
+        if (empleado == null) return NotFound(new { message = $"Empleado #{id} no encontrado" });
 
         var legajoTrimmed = request.Legajo?.Trim();
         if (!string.IsNullOrWhiteSpace(legajoTrimmed) &&

@@ -19,6 +19,15 @@ public static class SeedData
         catch (Exception ex)
         {
             Console.WriteLine($"[SeedData] Aviso al verificar migraciones de base de datos: {ex.Message}");
+            try
+            {
+                // Fallback para bases de datos limpias (como Render PostgreSQL o SQLite) donde las migraciones previas no coincidan
+                await context.Database.EnsureCreatedAsync();
+            }
+            catch (Exception exEnsure)
+            {
+                Console.WriteLine($"[SeedData] Aviso en EnsureCreatedAsync: {exEnsure.Message}");
+            }
         }
 
         // ── 1. Seed Categorías de Pañol / Artículos ──────────────────────────────

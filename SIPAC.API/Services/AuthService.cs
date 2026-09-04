@@ -28,7 +28,10 @@ public class AuthService
 
     public string GenerateJwtToken(Usuario usuario)
     {
-        var secret = _configuration["Jwt:Secret"] ?? "SIPAC_DEV_SECRET_KEY_CHANGE_IN_PRODUCTION_32CHARS!";
+        var secret = _configuration["Jwt:Secret"]
+            ?? Environment.GetEnvironmentVariable("JWT_SECRET")
+            ?? Environment.GetEnvironmentVariable("JWT__SECRET")
+            ?? "SIPAC_DEV_SECRET_KEY_CHANGE_IN_PRODUCTION_32CHARS!";
         var issuer = _configuration["Jwt:Issuer"] ?? "sipac-api";
         var audience = _configuration["Jwt:Audience"] ?? "sipac-web";
 
