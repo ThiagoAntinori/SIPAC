@@ -3,6 +3,9 @@ import { useAuthStore } from '../store/authStore';
 import {
   User,
   LoginResponse,
+  CrearUsuarioRequest,
+  ActualizarUsuarioRequest,
+  CambiarPasswordRequest,
   Categoria,
   Articulo,
   Empleado,
@@ -49,6 +52,19 @@ export const authApi = {
   me: () => api.get<User>('/auth/me').then((r) => r.data),
   register: (data: any) => api.post<User>('/auth/register', data).then((r) => r.data),
   getUsers: () => api.get<User[]>('/auth/users').then((r) => r.data),
+};
+
+export const usuariosApi = {
+  getAll: (params?: { search?: string; rol?: string; soloActivos?: boolean }) =>
+    api.get<User[]>('/usuarios', { params }).then((r) => r.data),
+  getById: (id: number) => api.get<User>(`/usuarios/${id}`).then((r) => r.data),
+  create: (data: CrearUsuarioRequest) => api.post<User>('/usuarios', data).then((r) => r.data),
+  update: (id: number, data: ActualizarUsuarioRequest) => api.put<User>(`/usuarios/${id}`, data).then((r) => r.data),
+  cambiarPassword: (id: number, data: CambiarPasswordRequest) =>
+    api.patch<{ message: string }>(`/usuarios/${id}/password`, data).then((r) => r.data),
+  toggleActivo: (id: number) => api.patch<User>(`/usuarios/${id}/toggle-activo`).then((r) => r.data),
+  delete: (id: number) =>
+    api.delete<{ message: string; tipoBaja: string }>(`/usuarios/${id}`).then((r) => r.data),
 };
 
 export const articulosApi = {

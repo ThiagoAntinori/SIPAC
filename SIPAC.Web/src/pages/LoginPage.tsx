@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { authApi } from '../services/api';
 import toast from 'react-hot-toast';
-import { Wrench, Lock, User, KeyRound, ChevronRight } from 'lucide-react';
+import { Wrench, Lock, User, KeyRound } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -31,11 +31,6 @@ export const LoginPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const fillDemo = (u: string, p: string) => {
-    setUsername(u);
-    setPassword(p);
   };
 
   return (
@@ -67,7 +62,7 @@ export const LoginPage: React.FC = () => {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Ej. admin o panolero"
+                placeholder="Ingrese su usuario"
                 className="w-full pl-9 pr-4 h-10 bg-white border border-slate-300 rounded-md text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all font-medium"
                 required
               />
@@ -108,38 +103,6 @@ export const LoginPage: React.FC = () => {
             )}
           </button>
         </form>
-
-        {/* Demo credentials hint */}
-        <div className="mt-6 pt-5 border-t border-slate-200">
-          <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2.5">
-            Credenciales de prueba
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => fillDemo('admin', 'Admin123!')}
-              className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md text-left transition-colors group"
-            >
-              <div className="flex items-center justify-between mb-0.5">
-                <span className="text-xs font-bold text-orange-700">Admin</span>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-orange-600 transition-colors" />
-              </div>
-              <p className="text-xs text-slate-600 font-mono font-medium">admin / Admin123!</p>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => fillDemo('panolero', 'Panol123!')}
-              className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md text-left transition-colors group"
-            >
-              <div className="flex items-center justify-between mb-0.5">
-                <span className="text-xs font-bold text-slate-800">Pañolero</span>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-colors" />
-              </div>
-              <p className="text-xs text-slate-600 font-mono font-medium">panolero / Panol123!</p>
-            </button>
-          </div>
-        </div>
       </div>
 
       <p className="mt-4 text-xs text-slate-500 font-medium z-10">

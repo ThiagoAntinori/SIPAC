@@ -12,6 +12,25 @@ export interface LoginResponse {
   usuario: User;
 }
 
+export interface CrearUsuarioRequest {
+  nombreCompleto: string;
+  username: string;
+  password: string;
+  rol: 'Admin' | 'Pañolero' | 'Supervisor';
+  activo?: boolean;
+}
+
+export interface ActualizarUsuarioRequest {
+  nombreCompleto: string;
+  username: string;
+  rol: 'Admin' | 'Pañolero' | 'Supervisor';
+  activo: boolean;
+}
+
+export interface CambiarPasswordRequest {
+  nuevaPassword: string;
+}
+
 export interface Categoria {
   id: number;
   nombre: string;

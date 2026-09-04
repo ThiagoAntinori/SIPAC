@@ -10,6 +10,7 @@ import {
   SlidersHorizontal,
   Users,
   ShieldAlert,
+  ShieldCheck,
   LogOut,
   Menu,
   X,
@@ -44,6 +45,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
 
   if (user?.rol === 'Admin') {
+    navItems.push({ label: 'Seguridad', path: '/seguridad', icon: ShieldCheck });
     navItems.push({ label: 'Auditoría', path: '/auditoria', icon: ShieldAlert });
   }
 

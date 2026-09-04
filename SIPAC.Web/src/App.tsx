@@ -16,6 +16,7 @@ import { EmpleadosPage } from './pages/EmpleadosPage';
 import { AjustesPage } from './pages/AjustesPage';
 import { AuditoriaPage } from './pages/AuditoriaPage';
 import { CategoriasPage } from './pages/CategoriasPage';
+import { SeguridadPage } from './pages/SeguridadPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,6 +54,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
 
           {/* Rutas Protegidas dentro de Layout */}
+          {/* Rutas Protegidas Generales */}
           <Route element={<ProtectedRoute />}>
             <Route
               path="/dashboard"
@@ -115,6 +117,18 @@ export default function App() {
               element={
                 <Layout>
                   <CategoriasPage />
+                </Layout>
+              }
+            />
+          </Route>
+
+          {/* Rutas Protegidas Exclusivas para Administrador */}
+          <Route element={<ProtectedRoute requiredRole="Admin" />}>
+            <Route
+              path="/seguridad"
+              element={
+                <Layout>
+                  <SeguridadPage />
                 </Layout>
               }
             />
