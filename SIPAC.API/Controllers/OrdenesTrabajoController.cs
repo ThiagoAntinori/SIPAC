@@ -15,11 +15,16 @@ public class OrdenesTrabajoController : ControllerBase
 {
     private readonly SipacDbContext _context;
     private readonly PushNotificationService _pushService;
+    private readonly NotificacionService _notificacionService;
 
-    public OrdenesTrabajoController(SipacDbContext context, PushNotificationService pushService)
+    public OrdenesTrabajoController(
+        SipacDbContext context,
+        PushNotificationService pushService,
+        NotificacionService notificacionService)
     {
         _context = context;
         _pushService = pushService;
+        _notificacionService = notificacionService;
     }
 
     [HttpGet]
@@ -199,6 +204,25 @@ public class OrdenesTrabajoController : ControllerBase
             }
         });
 
+        // Disparar notificación por Email al responsable asignado / admin
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _notificacionService.SendAsignacionOrdenTrabajoAsync(
+                    ot.NumeroOT,
+                    responsable.NombreCompleto,
+                    uf.DisplayNombre,
+                    ot.ProblemaReportado,
+                    responsable.Email
+                );
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EmailService] Error al notificar OT asignada en Create: {ex.Message}");
+            }
+        });
+
         return CreatedAtAction(nameof(GetById), new { id = ot.Id }, MapToDto(ot));
     }
 
@@ -253,9 +277,11 @@ public class OrdenesTrabajoController : ControllerBase
             estadoCambiado = true;
         }
 
+        var responsableCambiado = false;
         if (ot.ResponsableId != request.ResponsableId)
         {
             cambios.Add($"Responsable: '{ot.Responsable?.Nombre}' -> '{responsable.Nombre}'");
+            responsableCambiado = true;
         }
 
         if (ot.CategoriaId != request.CategoriaId)
@@ -304,6 +330,27 @@ public class OrdenesTrabajoController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
+
+        if (responsableCambiado)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _notificacionService.SendAsignacionOrdenTrabajoAsync(
+                        ot.NumeroOT,
+                        responsable.NombreCompleto,
+                        ot.UnidadFuncional?.DisplayNombre ?? "",
+                        ot.ProblemaReportado,
+                        responsable.Email
+                    );
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[EmailService] Error al notificar reasignación de OT: {ex.Message}");
+                }
+            });
+        }
 
         return Ok(MapToDto(ot));
     }

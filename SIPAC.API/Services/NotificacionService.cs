@@ -1,3 +1,6 @@
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
@@ -8,11 +11,15 @@ public class NotificacionService
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<NotificacionService> _logger;
-
-    public NotificacionService(IConfiguration configuration, ILogger<NotificacionService> logger)
+    private readonly IHttpClientFactory _httpClientFactory;
+    public NotificacionService(
+        IConfiguration configuration,
+        ILogger<NotificacionService> logger,
+        IHttpClientFactory httpClientFactory)
     {
         _configuration = configuration;
         _logger = logger;
+        _httpClientFactory = httpClientFactory;
     }
 
     public Task SendAlertAsync(string destinatario, string asunto, string mensaje)
@@ -22,6 +29,69 @@ public class NotificacionService
     }
 
     public async Task<bool> SendEmailAsync(string toEmail, string subject, string htmlBody)
+    {
+        // 1. Prioridad: API HTTP de Resend (HTTPS puerto 443 - no bloqueado por Render ni firewalls)
+        var resendApiKey = Environment.GetEnvironmentVariable("RESEND_API_KEY")
+            ?? Environment.GetEnvironmentVariable("RESEND__API_KEY")
+            ?? _configuration["Resend:ApiKey"]
+            ?? _configuration["Notifications:Resend:ApiKey"];
+
+        if (!string.IsNullOrWhiteSpace(resendApiKey))
+        {
+            return await SendViaResendAsync(resendApiKey.Trim(), toEmail, subject, htmlBody);
+        }
+
+        // 2. Fallback: SMTP clásico (MailKit)
+        return await SendViaSmtpAsync(toEmail, subject, htmlBody);
+    }
+
+    private async Task<bool> SendViaResendAsync(string apiKey, string toEmail, string subject, string htmlBody)
+    {
+        try
+        {
+            var fromEmail = Environment.GetEnvironmentVariable("RESEND_FROM")
+                ?? Environment.GetEnvironmentVariable("RESEND__FROM")
+                ?? _configuration["Resend:From"]
+                ?? "SITRAC <onboarding@resend.dev>";
+
+            var payload = new
+            {
+                from = fromEmail,
+                to = new[] { toEmail },
+                subject = subject,
+                html = htmlBody
+            };
+
+            var client = _httpClientFactory.CreateClient();
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            request.Content = new StringContent(
+                JsonSerializer.Serialize(payload),
+                Encoding.UTF8,
+                "application/json");
+
+            var response = await client.SendAsync(request);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("[Resend] Correo enviado exitosamente a {To}. Respuesta: {Response}", toEmail, responseContent);
+                return true;
+            }
+            else
+            {
+                _logger.LogError("[Resend] Error ({StatusCode}) al despachar correo a {To}: {Response}", (int)response.StatusCode, toEmail, responseContent);
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[Resend] Excepción al despachar correo vía API a {To}", toEmail);
+            return false;
+        }
+    }
+
+    private async Task<bool> SendViaSmtpAsync(string toEmail, string subject, string htmlBody)
     {
         var smtpHost = Environment.GetEnvironmentVariable("NOTIFICATIONS__EMAIL__SMTPHOST")
             ?? _configuration["Notifications:Email:SmtpHost"]
@@ -39,7 +109,7 @@ public class NotificacionService
 
         if (string.IsNullOrWhiteSpace(smtpUser) || string.IsNullOrWhiteSpace(smtpPass))
         {
-            _logger.LogWarning("[EmailService] Credenciales SMTP de Gmail no configuradas. Correo simulado para {To}: Asunto '{Subject}'", toEmail, subject);
+            _logger.LogWarning("[EmailService] Ni Resend ni SMTP configurados. Correo simulado para {To}: Asunto '{Subject}'", toEmail, subject);
             return true;
         }
 
@@ -59,17 +129,20 @@ public class NotificacionService
             message.Body = bodyBuilder.ToMessageBody();
 
             using var client = new SmtpClient();
+            client.Timeout = 10000; // 10 segundos máximo para evitar colgar hilos si el puerto está bloqueado
             await client.ConnectAsync(smtpHost, port, SecureSocketOptions.StartTls);
             await client.AuthenticateAsync(smtpUser, smtpPass);
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
 
             _logger.LogInformation("[EmailService] Correo enviado exitosamente a {To}", toEmail);
+            _logger.LogInformation("[EmailService] Correo SMTP enviado exitosamente a {To}", toEmail);
             return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "[EmailService] Error al despachar correo a {To}", toEmail);
+            _logger.LogError(ex, "[EmailService] Error SMTP al despachar correo a {To}", toEmail);
             return false;
         }
     }
@@ -132,20 +205,57 @@ public class NotificacionService
 
         if (string.IsNullOrWhiteSpace(toEmail))
         {
-            _logger.LogInformation("[Notificacion] Alerta de stock bajo para '{Articulo}': Actual {Actual} {Unidad} (Mínimo {Minimo} {Unidad}). No hay email de destino configurado.", articuloNombre, stockActual, stockMinimo, unidadMedida);
+            _logger.LogInformation("[Notificacion] Alerta de stock bajo para '{Articulo}': Actual {Actual} {Unidad} (Mínimo {Minimo} {Unidad}). No hay email de destino configurado.", articuloNombre, stockActual, unidadMedida, stockMinimo, unidadMedida);
             return false;
         }
 
-        var subject = $"⚠️ Alerta de Stock Bajo: {articuloNombre}";
+        var subject = $"⚠️ [SITRAC] Alerta de Stock Bajo: {articuloNombre}";
         var html = $@"
-        <div style='font-family: sans-serif; padding: 20px; color: #333;'>
-            <h2 style='color: #dc2626;'>⚠️ Alerta de Nivel de Stock Crítico</h2>
-            <p>El artículo <strong>{articuloNombre}</strong> ha alcanzado o superado el umbral de stock mínimo:</p>
-            <ul>
-                <li><strong>Stock Actual:</strong> {stockActual} {unidadMedida}</li>
-                <li><strong>Stock Mínimo:</strong> {stockMinimo} {unidadMedida}</li>
-            </ul>
-            <p>Por favor, gestione la compra o reposición en el sistema a la brevedad.</p>
+        <div style='font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; color: #333;'>
+            <h2 style='color: #dc2626;'>⚠️ Alerta de Stock Bajo — SITRAC</h2>
+            <p>El siguiente artículo se encuentra en o por debajo de su stock mínimo:</p>
+            <table border='1' cellpadding='8' cellspacing='0' style='border-collapse: collapse; width: 100%; max-width: 480px;'>
+                <tr style='background: #f8fafc;'><th align='left'>Artículo</th><td><strong>{articuloNombre}</strong></td></tr>
+                <tr><th align='left'>Stock Actual</th><td style='color: #dc2626; font-weight: bold;'>{stockActual} {unidadMedida}</td></tr>
+                <tr style='background: #f8fafc;'><th align='left'>Stock Mínimo</th><td>{stockMinimo} {unidadMedida}</td></tr>
+                <tr><th align='left'>Fecha y Hora</th><td>{DateTime.UtcNow:dd/MM/yyyy HH:mm} UTC</td></tr>
+            </table>
+            <p style='margin-top: 16px;'>Por favor, gestione la compra o reposición en el sistema a la brevedad.</p>
+        </div>";
+
+        return await SendEmailAsync(toEmail, subject, html);
+    }
+
+    public async Task<bool> SendAsignacionOrdenTrabajoAsync(
+        string numeroOT,
+        string responsable,
+        string unidadFuncional,
+        string problema,
+        string? emailResponsable = null)
+    {
+        var toEmail = !string.IsNullOrWhiteSpace(emailResponsable)
+            ? emailResponsable
+            : (Environment.GetEnvironmentVariable("NOTIFICATIONS__EMAIL__TO") ?? _configuration["Notifications:Email:To"]);
+
+        if (string.IsNullOrWhiteSpace(toEmail))
+        {
+            _logger.LogInformation("[Notificacion] Asignación de OT {NumeroOT} a {Responsable}. No hay email configurado.", numeroOT, responsable);
+            return false;
+        }
+
+        var subject = $"📋 [SITRAC] Nueva OT Asignada: {numeroOT} — {responsable}";
+        var html = $@"
+        <div style='font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; color: #333;'>
+            <h2 style='color: #2563eb;'>📋 Nueva Orden de Trabajo Asignada</h2>
+            <p>Se ha registrado una nueva orden de trabajo con los siguientes detalles:</p>
+            <table border='1' cellpadding='8' cellspacing='0' style='border-collapse: collapse; width: 100%; max-width: 520px;'>
+                <tr style='background: #f8fafc;'><th align='left'>Número de OT</th><td><strong>{numeroOT}</strong></td></tr>
+                <tr><th align='left'>Responsable</th><td>{responsable}</td></tr>
+                <tr style='background: #f8fafc;'><th align='left'>Unidad Funcional</th><td>{unidadFuncional}</td></tr>
+                <tr><th align='left'>Problema reportado</th><td>{problema}</td></tr>
+                <tr style='background: #f8fafc;'><th align='left'>Fecha</th><td>{DateTime.UtcNow:dd/MM/yyyy HH:mm} UTC</td></tr>
+            </table>
+            <p style='margin-top: 16px;'>Ingrese al sistema para gestionar o actualizar el estado de la OT.</p>
         </div>";
 
         return await SendEmailAsync(toEmail, subject, html);
