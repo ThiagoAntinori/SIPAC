@@ -94,6 +94,13 @@ export const empleadosApi = {
     api.get<Empleado[]>('/empleados', { params }).then((r) => r.data),
   create: (data: Partial<Empleado>) => api.post<Empleado>('/empleados', data).then((r) => r.data),
   update: (id: string, data: Partial<Empleado>) => api.put(`/empleados/${id}`, data).then((r) => r.data),
+  getById: (id: string) => api.get<Empleado>(`/empleados/${id}`).then((r) => r.data),
+  create: (data: Partial<Empleado> & { nombreCompleto: string }) =>
+    api.post<Empleado>('/empleados', data).then((r) => r.data),
+  update: (id: string, data: Partial<Empleado> & { nombreCompleto: string }) =>
+    api.put<Empleado>(`/empleados/${id}`, data).then((r) => r.data),
+  toggleActivo: (id: string) =>
+    api.patch<Empleado>(`/empleados/${id}/toggle-activo`).then((r) => r.data),
 };
 
 export const responsablesApi = {

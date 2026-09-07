@@ -94,6 +94,7 @@ def execute_single_sql(pipeline_url: str, token: str, sql: str, args: list = Non
 def main():
     print("=" * 70)
     print("SIPAC / BASI Fix - Limpieza y Unificación de Tablas en Turso")
+    print("SITRAC - Limpieza y Unificación de Tablas en Turso")
     print("=" * 70)
 
     load_env(ENV_FILE)

@@ -3,6 +3,7 @@
 """
 Script de Migración: CSVs de Datos -> Turso Cloud Database (libSQL)
 SIPAC - Sistema Integral de Pañol y Abastecimiento para Consorcios / BASI Fix
+SITRAC - Sistema Integral de Trabajos y Abastecimiento para Consorcios
 """
 
 import os
@@ -214,6 +215,7 @@ def send_in_batches(pipeline_url: str, token: str, statements: list, batch_size:
 def migrate():
     print("=" * 70)
     print("SIPAC / BASI Fix - Proceso de Migración a Turso Database")
+    print("SITRAC - Proceso de Migración a Turso Database")
     print("=" * 70)
 
     # 1. Cargar entorno y credenciales

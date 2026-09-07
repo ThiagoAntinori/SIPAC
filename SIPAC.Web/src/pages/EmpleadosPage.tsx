@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { empleadosApi, operariosApi } from '../services/api';
 import { Empleado } from '../types';
@@ -16,6 +16,10 @@ import {
   RefreshCw,
   Copy,
   ExternalLink,
+  Search,
+  UserX,
+  UserCheck,
+  Sparkles,
 } from 'lucide-react';
 
 const inputCls =
@@ -31,6 +35,13 @@ export const EmpleadosPage: React.FC = () => {
   const [nombreCompleto, setNombreCompleto] = useState('');
   const [legajo, setLegajo] = useState('');
   const [puestoSector, setPuestoSector] = useState('');
+  const [usuario, setUsuario] = useState('');
+  const [email, setEmail] = useState('');
+  const [activo, setActivo] = useState(true);
+
+  // Filtros y búsqueda
+  const [search, setSearch] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'activos' | 'inactivos'>('todos');
 
   // Modal de Habilitar Acceso Móvil
   const [modalAccesoOpen, setModalAccesoOpen] = useState(false);
@@ -48,31 +59,85 @@ export const EmpleadosPage: React.FC = () => {
     queryFn: () => empleadosApi.getAll({ soloActivos: false }),
   });
 
+  // Métricas
+  const metrics = useMemo(() => {
+    const total = empleados.length;
+    const activos = empleados.filter((e) => e.activo).length;
+    const inactivos = total - activos;
+    const conAccesoMovil = empleados.filter(
+      (e) => e.tienePin || e.tienePinConfigurado
+    ).length;
+    return { total, activos, inactivos, conAccesoMovil };
+  }, [empleados]);
+
+  // Lista filtrada
+  const filteredEmpleados = useMemo(() => {
+    return empleados.filter((emp) => {
+      if (filtroEstado === 'activos' && !emp.activo) return false;
+      if (filtroEstado === 'inactivos' && emp.activo) return false;
+
+      if (search.trim()) {
+        const s = search.toLowerCase();
+        const matchNombre = emp.nombreCompleto?.toLowerCase().includes(s);
+        const matchLegajo = emp.legajo?.toLowerCase().includes(s);
+        const matchPuesto = emp.puestoSector?.toLowerCase().includes(s);
+        const matchUsuario = emp.usuario?.toLowerCase().includes(s);
+        const matchEmail = emp.email?.toLowerCase().includes(s);
+
+        if (!matchNombre && !matchLegajo && !matchPuesto && !matchUsuario && !matchEmail) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [empleados, filtroEstado, search]);
+
   const saveMutation = useMutation({
     mutationFn: () => {
+      const payload = {
+        nombreCompleto: nombreCompleto.trim(),
+        legajo: legajo.trim() || undefined,
+        puestoSector: puestoSector.trim() || undefined,
+        usuario: usuario.trim() ? usuario.trim().toLowerCase() : undefined,
+        email: email.trim() ? email.trim().toLowerCase() : undefined,
+        activo,
+      };
+
       if (editingEmp) {
-        return empleadosApi.update(editingEmp.id, {
-          nombreCompleto,
-          legajo,
-          puestoSector,
-          activo: editingEmp.activo,
-        });
+        return empleadosApi.update(editingEmp.id, payload);
       } else {
-        return empleadosApi.create({
-          nombreCompleto,
-          legajo,
-          puestoSector,
-        });
+        return empleadosApi.create(payload);
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['empleadosList'] });
       queryClient.invalidateQueries({ queryKey: ['empleados'] });
-      toast.success(editingEmp ? 'Empleado actualizado' : 'Empleado registrado');
+      queryClient.invalidateQueries({ queryKey: ['responsables'] });
+      toast.success(editingEmp ? 'Empleado actualizado exitosamente' : 'Empleado registrado exitosamente');
       closeModal();
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Error al guardar el empleado');
+    },
+  });
+
+  const toggleActivoMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return empleadosApi.toggleActivo(id);
+    },
+    onSuccess: (updatedEmp) => {
+      queryClient.invalidateQueries({ queryKey: ['empleadosList'] });
+      queryClient.invalidateQueries({ queryKey: ['empleados'] });
+      queryClient.invalidateQueries({ queryKey: ['responsables'] });
+      toast.success(
+        updatedEmp.activo
+          ? `Empleado '${updatedEmp.nombreCompleto}' activado`
+          : `Empleado '${updatedEmp.nombreCompleto}' desactivado`
+      );
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Error al cambiar estado del empleado');
     },
   });
 
@@ -106,14 +171,20 @@ export const EmpleadosPage: React.FC = () => {
     setNombreCompleto('');
     setLegajo('');
     setPuestoSector('');
+    setUsuario('');
+    setEmail('');
+    setActivo(true);
     setModalOpen(true);
   };
 
   const openEditModal = (emp: Empleado) => {
     setEditingEmp(emp);
-    setNombreCompleto(emp.nombreCompleto);
-    setLegajo(emp.legajo);
-    setPuestoSector(emp.puestoSector);
+    setNombreCompleto(emp.nombreCompleto || '');
+    setLegajo(emp.legajo || '');
+    setPuestoSector(emp.puestoSector || '');
+    setUsuario(emp.usuario || '');
+    setEmail(emp.email || '');
+    setActivo(emp.activo !== undefined ? emp.activo : true);
     setModalOpen(true);
   };
 
@@ -136,29 +207,71 @@ export const EmpleadosPage: React.FC = () => {
     setEmailAcceso('');
   };
 
+  const handleSugerirUsuario = () => {
+    if (!nombreCompleto.trim()) {
+      toast.error('Ingresa primero el nombre completo para sugerir un usuario');
+      return;
+    }
+    const sugerido = getPreviewUsuario(nombreCompleto);
+    setUsuario(sugerido);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nombreCompleto.trim() || !legajo.trim() || !puestoSector.trim()) {
-      toast.error('Todos los campos son obligatorios');
+    if (!nombreCompleto.trim()) {
+      toast.error('El nombre completo es obligatorio');
       return;
+    }
+    if (!legajo.trim()) {
+      toast.error('El número de legajo es obligatorio');
+      return;
+    }
+    if (!puestoSector.trim()) {
+      toast.error('El puesto o sector es obligatorio');
+      return;
+    }
+    if (email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        toast.error('Por favor ingresa un correo electrónico válido');
+        return;
+      }
     }
     saveMutation.mutate();
   };
 
-  // Previsualizar usuario estimado
+  // Previsualizar / generar usuario estimado
   const getPreviewUsuario = (nombre: string) => {
-    const parts = nombre.trim().toLowerCase().split(/\s+/);
-    if (parts.length < 2) return parts[0] || 'usuario';
-    return `${parts[0][0]}${parts[parts.length - 1]}`.replace(/[^a-z0-9]/g, '');
+    const sinTildes = nombre
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+    const parts = sinTildes.trim().toLowerCase().split(/\s+/);
+    if (parts.length === 0 || !parts[0]) return 'usuario';
+    if (parts.length < 2) return parts[0].replace(/[^a-z0-9]/g, '');
+    const inicial = parts[0][0];
+    const apellido = parts[parts.length - 1];
+    return `${inicial}${apellido}`.replace(/[^a-z0-9]/g, '');
+  };
+
+  const handleToggleEstado = (emp: Empleado) => {
+    const accion = emp.activo ? 'desactivar' : 'activar';
+    if (
+      window.confirm(
+        `¿Estás seguro de que deseas ${accion} al empleado "${emp.nombreCompleto}"?`
+      )
+    ) {
+      toggleActivoMutation.mutate(emp.id);
+    }
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">Personal / Empleados</h1>
           <p className="text-slate-600 text-sm mt-0.5">
-            Padrón de empleados autorizados para retiro de insumos y acceso móvil de operarios
+            Padrón de personal, gestión de cuentas, asignación de tareas y acceso móvil
           </p>
         </div>
 
@@ -171,14 +284,99 @@ export const EmpleadosPage: React.FC = () => {
         </button>
       </div>
 
+      {/* Metrics Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-white border border-slate-200 rounded-lg p-3.5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">Total Personal</span>
+            <Users className="w-4 h-4 text-slate-400" />
+          </div>
+          <div className="text-xl font-bold text-slate-900 mt-1">{metrics.total}</div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-lg p-3.5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-emerald-600">Activos</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="text-xl font-bold text-emerald-700 mt-1">{metrics.activos}</div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-lg p-3.5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">Inactivos</span>
+            <UserX className="w-4 h-4 text-slate-400" />
+          </div>
+          <div className="text-xl font-bold text-slate-600 mt-1">{metrics.inactivos}</div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-lg p-3.5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-orange-600">Móvil Activo</span>
+            <Smartphone className="w-4 h-4 text-orange-500" />
+          </div>
+          <div className="text-xl font-bold text-orange-600 mt-1">{metrics.conAccesoMovil}</div>
+        </div>
+      </div>
+
+      {/* Filters and Search Bar */}
+      <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nombre, legajo, puesto, usuario o email..."
+            className={`${inputCls} pl-9`}
+          />
+        </div>
+
+        <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-lg self-start sm:self-auto">
+          <button
+            onClick={() => setFiltroEstado('todos')}
+            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+              filtroEstado === 'todos'
+                ? 'bg-white text-slate-900 shadow-xs font-semibold'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Todos ({metrics.total})
+          </button>
+          <button
+            onClick={() => setFiltroEstado('activos')}
+            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+              filtroEstado === 'activos'
+                ? 'bg-white text-emerald-700 shadow-xs font-semibold'
+                : 'text-slate-600 hover:text-emerald-700'
+            }`}
+          >
+            Activos ({metrics.activos})
+          </button>
+          <button
+            onClick={() => setFiltroEstado('inactivos')}
+            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+              filtroEstado === 'inactivos'
+                ? 'bg-white text-slate-700 shadow-xs font-semibold'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Inactivos ({metrics.inactivos})
+          </button>
+        </div>
+      </div>
+
       {/* Table */}
       <div className="bg-white border border-slate-200 rounded-lg shadow-xs overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center text-slate-400 text-sm">Cargando personal...</div>
-        ) : empleados.length === 0 ? (
+        ) : filteredEmpleados.length === 0 ? (
           <div className="p-8 text-center">
             <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-            <p className="text-slate-400 text-sm">No hay empleados registrados.</p>
+            <p className="text-slate-500 font-medium text-sm">No se encontraron empleados</p>
+            <p className="text-slate-400 text-xs mt-1">
+              {search ? 'Intenta modificar el término de búsqueda o los filtros' : 'Aún no hay empleados registrados en esta categoría'}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -186,7 +384,8 @@ export const EmpleadosPage: React.FC = () => {
               <thead className="bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                 <tr>
                   <th className="py-3 px-4">Legajo</th>
-                  <th className="py-3 px-4">Nombre Completo</th>
+                  <th className="py-3 px-4">Empleado / Contacto</th>
+                  <th className="py-3 px-4">Usuario Móvil</th>
                   <th className="py-3 px-4">Puesto / Sector</th>
                   <th className="py-3 px-4 text-center">Acceso Móvil</th>
                   <th className="py-3 px-4 text-center">Estado</th>
@@ -194,114 +393,160 @@ export const EmpleadosPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {empleados.map((emp) => (
-                  <tr
-                    key={emp.id}
-                    className={`hover:bg-slate-50 transition-colors ${!emp.activo ? 'opacity-50' : ''}`}
-                  >
-                    <td className="py-3 px-4 font-mono font-bold text-slate-900 tabular-nums">
-                      {emp.legajo}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="font-semibold text-slate-900 text-sm">{emp.nombreCompleto}</div>
-                      {emp.email && <div className="text-[11px] text-slate-400">{emp.email}</div>}
-                    </td>
-                    <td className="py-3 px-4 text-slate-700 font-medium">{emp.puestoSector}</td>
-                    <td className="py-3 px-4 text-center">
-                      {emp.tienePinConfigurado ? (
-                        <div className="inline-flex flex-col items-center">
-                          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300">
-                            <CheckCircle2 className="w-3 h-3" />
-                            <span>Móvil Activo</span>
-                          </span>
-                          <span className="text-[10px] font-mono text-slate-500 mt-0.5">
-                            @{emp.usuario}
-                          </span>
-                        </div>
-                      ) : emp.tieneAccesoMovil ? (
-                        <div className="inline-flex flex-col items-center">
-                          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-300">
-                            <Clock className="w-3 h-3" />
-                            <span>Pendiente PIN</span>
-                          </span>
-                          <span className="text-[10px] font-mono text-slate-500 mt-0.5">
-                            @{emp.usuario}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
-                          Sin Acceso
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                          emp.activo
-                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold text-xs'
-                            : 'bg-slate-100 text-slate-600 border border-slate-300 font-bold text-xs'
-                        }`}
-                      >
-                        {emp.activo ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end space-x-1.5">
-                        {/* Botón Habilitar / Gestionar Acceso Móvil */}
-                        <button
-                          onClick={() => openAccesoModal(emp)}
-                          className={`p-1.5 rounded-md border transition-colors flex items-center space-x-1 ${
-                            emp.tienePinConfigurado
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                              : emp.tieneAccesoMovil
-                              ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
-                              : 'bg-white hover:bg-orange-50 text-slate-600 hover:text-orange-700 border-slate-200 hover:border-orange-200'
-                          }`}
-                          title={
-                            emp.tieneAccesoMovil
-                              ? 'Reenviar enlace o gestionar acceso móvil'
-                              : 'Habilitar acceso al Portal Móvil'
-                          }
-                        >
-                          <Smartphone className="w-3.5 h-3.5" />
-                          <span className="text-[11px] font-semibold hidden md:inline">
-                            {emp.tienePinConfigurado
-                              ? 'Reenviar'
-                              : emp.tieneAccesoMovil
-                              ? 'Reenviar Link'
-                              : 'Acceso Móvil'}
-                          </span>
-                        </button>
+                {filteredEmpleados.map((emp) => {
+                  const tienePinConfig = emp.tienePin || emp.tienePinConfigurado;
+                  const tieneAccesoMov = tienePinConfig || emp.pendienteActivacion || emp.tieneAccesoMovil;
 
-                        <button
-                          onClick={() => openEditModal(emp)}
-                          className="p-1.5 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-700 rounded-md border border-slate-200 transition-colors"
-                          title="Editar"
+                  return (
+                    <tr
+                      key={emp.id}
+                      className={`hover:bg-slate-50 transition-colors ${
+                        !emp.activo ? 'bg-slate-50/60 opacity-60' : ''
+                      }`}
+                    >
+                      <td className="py-3 px-4 font-mono font-bold text-slate-900 tabular-nums">
+                        {emp.legajo || '—'}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-slate-900 text-sm">{emp.nombreCompleto}</div>
+                        {emp.email ? (
+                          <div className="flex items-center space-x-1 text-[11px] text-slate-500 mt-0.5">
+                            <Mail className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span>{emp.email}</span>
+                          </div>
+                        ) : (
+                          <div className="text-[11px] text-slate-400 italic">Sin correo registrado</div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        {emp.usuario ? (
+                          <span className="inline-flex items-center space-x-1 font-mono text-[11px] font-semibold text-orange-700 bg-orange-50 px-2 py-0.5 rounded border border-orange-200">
+                            <span>@{emp.usuario}</span>
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 italic">Sin usuario</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-slate-700 font-medium">{emp.puestoSector || '—'}</td>
+                      <td className="py-3 px-4 text-center">
+                        {tienePinConfig ? (
+                          <div className="inline-flex flex-col items-center">
+                            <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>Móvil Activo</span>
+                            </span>
+                          </div>
+                        ) : tieneAccesoMov ? (
+                          <div className="inline-flex flex-col items-center">
+                            <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-300">
+                              <Clock className="w-3 h-3" />
+                              <span>Pendiente PIN</span>
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                            Sin Acceso
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            emp.activo
+                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
+                              : 'bg-slate-100 text-slate-600 border border-slate-300'
+                          }`}
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          {emp.activo ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end space-x-1.5">
+                          {/* Botón Habilitar / Gestionar Acceso Móvil */}
+                          <button
+                            onClick={() => openAccesoModal(emp)}
+                            disabled={!emp.activo}
+                            className={`p-1.5 rounded-md border transition-colors flex items-center space-x-1 disabled:opacity-40 disabled:cursor-not-allowed ${
+                              tienePinConfig
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                : tieneAccesoMov
+                                ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                                : 'bg-white hover:bg-orange-50 text-slate-600 hover:text-orange-700 border-slate-200 hover:border-orange-200'
+                            }`}
+                            title={
+                              !emp.activo
+                                ? 'Activa el empleado para gestionar acceso móvil'
+                                : tieneAccesoMov
+                                ? 'Reenviar enlace o gestionar acceso móvil'
+                                : 'Habilitar acceso al Portal Móvil'
+                            }
+                          >
+                            <Smartphone className="w-3.5 h-3.5" />
+                            <span className="text-[11px] font-semibold hidden md:inline">
+                              {tienePinConfig
+                                ? 'Reenviar'
+                                : tieneAccesoMov
+                                ? 'Reenviar Link'
+                                : 'Acceso Móvil'}
+                            </span>
+                          </button>
+
+                          {/* Botón Editar */}
+                          <button
+                            onClick={() => openEditModal(emp)}
+                            className="p-1.5 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 rounded-md border border-slate-200 transition-colors"
+                            title="Editar todos los datos del empleado"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Botón Desactivar / Activar */}
+                          <button
+                            onClick={() => handleToggleEstado(emp)}
+                            disabled={toggleActivoMutation.isPending}
+                            className={`p-1.5 rounded-md border transition-colors ${
+                              emp.activo
+                                ? 'bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border-slate-200 hover:border-rose-200'
+                                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
+                            }`}
+                            title={emp.activo ? 'Desactivar empleado' : 'Activar empleado'}
+                          >
+                            {emp.activo ? (
+                              <UserX className="w-3.5 h-3.5" />
+                            ) : (
+                              <UserCheck className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
       </div>
 
-      {/* Modal Crear/Editar Empleado */}
+      {/* Modal Crear / Editar Empleado (Todos los datos) */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white border border-slate-200 rounded-xl w-full max-w-md shadow-xl">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 rounded-xl w-full max-w-lg shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
               <div className="flex items-center space-x-2.5">
-                <div className="p-1.5 bg-orange-50 rounded-md">
-                  <Users className="w-4 h-4 text-orange-600" />
+                <div className="p-1.5 bg-orange-50 text-orange-600 rounded-lg border border-orange-100">
+                  <Users className="w-4 h-4" />
                 </div>
-                <h3 className="text-base font-semibold text-slate-900">
-                  {editingEmp ? 'Editar Empleado' : 'Registrar Empleado'}
-                </h3>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    {editingEmp ? 'Modificar Empleado' : 'Registrar Nuevo Empleado'}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {editingEmp
+                      ? 'Actualiza todos los datos del personal, cuenta y estado'
+                      : 'Ingresa los datos personales y de acceso del empleado'}
+                  </p>
+                </div>
               </div>
               <button
                 onClick={closeModal}
@@ -311,9 +556,12 @@ export const EmpleadosPage: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
+            <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+              {/* Nombre Completo */}
               <div>
-                <label className={labelCls}>Nombre Completo *</label>
+                <label className={labelCls}>
+                  Nombre Completo <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={nombreCompleto}
@@ -324,30 +572,120 @@ export const EmpleadosPage: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className={labelCls}>Número de Legajo *</label>
-                <input
-                  type="text"
-                  value={legajo}
-                  onChange={(e) => setLegajo(e.target.value)}
-                  placeholder="Ej. LEG-1005"
-                  className={`${inputCls} font-mono`}
-                  required
-                />
+              {/* Fila: Legajo y Puesto/Sector */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>
+                    Número de Legajo <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={legajo}
+                    onChange={(e) => setLegajo(e.target.value)}
+                    placeholder="Ej. LEG-1005"
+                    className={`${inputCls} font-mono`}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className={labelCls}>
+                    Puesto / Sector <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={puestoSector}
+                    onChange={(e) => setPuestoSector(e.target.value)}
+                    placeholder="Ej. Mantenimiento Eléctrico"
+                    className={inputCls}
+                    required
+                  />
+                </div>
               </div>
 
+              {/* Fila: Usuario y Botón Sugerir */}
               <div>
-                <label className={labelCls}>Puesto / Sector *</label>
-                <input
-                  type="text"
-                  value={puestoSector}
-                  onChange={(e) => setPuestoSector(e.target.value)}
-                  placeholder="Ej. Mantenimiento Eléctrico"
-                  className={inputCls}
-                  required
-                />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700">
+                    Nombre de Usuario (Login Móvil)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleSugerirUsuario}
+                    className="inline-flex items-center space-x-1 text-[11px] font-semibold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-2 py-0.5 rounded transition-colors"
+                    title="Generar nombre de usuario basado en el nombre completo"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>Sugerir Usuario</span>
+                  </button>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-slate-400 font-mono text-sm">@</span>
+                  <input
+                    type="text"
+                    value={usuario}
+                    onChange={(e) => setUsuario(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ''))}
+                    placeholder="ej. jperez"
+                    className={`${inputCls} pl-7 font-mono`}
+                    maxLength={50}
+                  />
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Identificador para que el operario ingrese a la aplicación móvil. Si se deja vacío, puede autogenerarse al habilitar el acceso.
+                </p>
               </div>
 
+              {/* Correo Electrónico */}
+              <div>
+                <label className={labelCls}>Correo Electrónico (Email)</label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="ej. juan.perez@empresa.com"
+                    className={`${inputCls} pl-9`}
+                    maxLength={150}
+                  />
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Se utilizará para enviar el enlace de activación de PIN y notificaciones de órdenes de trabajo.
+                </p>
+              </div>
+
+              {/* Estado Activo / Inactivo */}
+              <div className="pt-2 border-t border-slate-100">
+                <label className="flex items-center justify-between p-3 rounded-lg border border-slate-200 bg-slate-50/50 cursor-pointer hover:bg-slate-50 transition-colors">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs font-bold text-slate-900">Estado del Empleado</span>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          activo
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-rose-100 text-rose-800'
+                        }`}
+                      >
+                        {activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      {activo
+                        ? 'El empleado puede ser asignado a tareas y acceder al portal móvil.'
+                        : 'El empleado está desactivado. No figurará en asignaciones ni podrá iniciar sesión.'}
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={activo}
+                    onChange={(e) => setActivo(e.target.checked)}
+                    className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 border-slate-300"
+                  />
+                </label>
+              </div>
+
+              {/* Botones de acción del Modal */}
               <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
@@ -361,7 +699,11 @@ export const EmpleadosPage: React.FC = () => {
                   disabled={saveMutation.isPending}
                   className="px-5 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white rounded-md text-sm font-semibold shadow-xs transition-all duration-150 active:scale-[0.99]"
                 >
-                  {saveMutation.isPending ? 'Guardando...' : 'Guardar'}
+                  {saveMutation.isPending
+                    ? 'Guardando...'
+                    : editingEmp
+                    ? 'Guardar Cambios'
+                    : 'Registrar Empleado'}
                 </button>
               </div>
             </form>
