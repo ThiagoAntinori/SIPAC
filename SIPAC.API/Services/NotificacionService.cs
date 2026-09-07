@@ -109,6 +109,7 @@ public class NotificacionService
 
         if (string.IsNullOrWhiteSpace(smtpUser) || string.IsNullOrWhiteSpace(smtpPass))
         {
+            _logger.LogWarning("[EmailService] Credenciales SMTP de Gmail no configuradas. Correo simulado para {To}: Asunto '{Subject}'", toEmail, subject);
             _logger.LogWarning("[EmailService] Ni Resend ni SMTP configurados. Correo simulado para {To}: Asunto '{Subject}'", toEmail, subject);
             return true;
         }
