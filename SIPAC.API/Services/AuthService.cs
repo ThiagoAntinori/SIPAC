@@ -57,6 +57,38 @@ public class AuthService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    public string GenerateJwtTokenForOperario(Empleado empleado)
+    {
+        var secret = _configuration["Jwt:Secret"]
+            ?? Environment.GetEnvironmentVariable("JWT_SECRET")
+            ?? Environment.GetEnvironmentVariable("JWT__SECRET")
+            ?? "SIPAC_DEV_SECRET_KEY_CHANGE_IN_PRODUCTION_32CHARS!";
+        var issuer = _configuration["Jwt:Issuer"] ?? "sipac-api";
+        var audience = _configuration["Jwt:Audience"] ?? "sipac-web";
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, empleado.Id.ToString()),
+            new Claim(ClaimTypes.Name, empleado.Usuario ?? empleado.NombreCompleto),
+            new Claim("NombreCompleto", empleado.NombreCompleto),
+            new Claim(ClaimTypes.Role, "Operario"),
+            new Claim("OperarioId", empleado.Id.ToString())
+        };
+
+        var token = new JwtSecurityToken(
+            issuer: issuer,
+            audience: audience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddDays(30), // Sesión móvil cómoda
+            signingCredentials: credentials
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
     public string GenerateRefreshToken()
     {
         var randomNumber = new byte[32];

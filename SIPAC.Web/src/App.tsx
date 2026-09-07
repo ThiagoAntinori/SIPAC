@@ -17,6 +17,9 @@ import { AjustesPage } from './pages/AjustesPage';
 import { AuditoriaPage } from './pages/AuditoriaPage';
 import { CategoriasPage } from './pages/CategoriasPage';
 import { SeguridadPage } from './pages/SeguridadPage';
+import { LoginOperarioPage } from './pages/LoginOperarioPage';
+import { ActivarPinPage } from './pages/ActivarPinPage';
+import { PortalOperarioPage } from './pages/PortalOperarioPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,6 +55,9 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/login-operario" element={<LoginOperarioPage />} />
+          <Route path="/activar-pin" element={<ActivarPinPage />} />
+          <Route path="/operario" element={<PortalOperarioPage />} />
 
           {/* Rutas Protegidas dentro de Layout */}
           {/* Rutas Protegidas Generales */}

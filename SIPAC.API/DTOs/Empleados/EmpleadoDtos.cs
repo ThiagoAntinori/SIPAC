@@ -8,6 +8,11 @@ public class EmpleadoDto
     public string PuestoSector { get; set; } = string.Empty;
     public bool Activo { get; set; }
     public int CantidadOrdenes { get; set; }
+    public string? Usuario { get; set; }
+    public string? Email { get; set; }
+    public bool TienePin { get; set; }
+    public bool PendienteActivacion { get; set; }
+    public string EstadoAccesoMovil { get; set; } = "Sin Acceso";
 }
 
 public class CreateEmpleadoDto

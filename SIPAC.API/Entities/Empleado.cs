@@ -30,5 +30,25 @@ public class Empleado
     [Column("activo")]
     public bool Activo { get; set; } = true;
 
+    [Column("usuario")]
+    [MaxLength(50)]
+    public string? Usuario { get; set; }
+
+    [Column("email")]
+    [MaxLength(150)]
+    public string? Email { get; set; }
+
+    [Column("pin_hash")]
+    [MaxLength(255)]
+    public string? PinHash { get; set; }
+
+    [Column("token_alta_pin")]
+    [MaxLength(255)]
+    public string? TokenAltaPin { get; set; }
+
+    [Column("token_alta_expira")]
+    public DateTime? TokenAltaExpira { get; set; }
+
     public ICollection<OrdenTrabajo> OrdenesTrabajo { get; set; } = new List<OrdenTrabajo>();
+    public ICollection<SuscripcionPush> SuscripcionesPush { get; set; } = new List<SuscripcionPush>();
 }

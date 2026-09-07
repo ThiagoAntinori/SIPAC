@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
@@ -11,6 +11,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole }) 
 
   if (!token) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (user?.rol === 'Operario') {
+    return <Navigate to="/operario" replace />;
   }
 
   if (requiredRole && user?.rol !== requiredRole) {

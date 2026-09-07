@@ -25,6 +25,7 @@ public class EmpleadosController : ControllerBase
         var query = _context.Empleados.AsNoTracking().AsQueryable();
         if (soloActivos) query = query.Where(e => e.Activo);
 
+        var now = DateTime.UtcNow;
         var list = await query
             .OrderBy(e => e.NombreCompleto)
             .Select(e => new EmpleadoDto
@@ -34,7 +35,14 @@ public class EmpleadosController : ControllerBase
                 Legajo = e.Legajo ?? "",
                 PuestoSector = e.PuestoSector ?? "",
                 Activo = e.Activo,
-                CantidadOrdenes = e.OrdenesTrabajo.Count
+                CantidadOrdenes = e.OrdenesTrabajo.Count,
+                Usuario = e.Usuario,
+                Email = e.Email,
+                TienePin = !string.IsNullOrEmpty(e.PinHash),
+                PendienteActivacion = !string.IsNullOrEmpty(e.TokenAltaPin) && e.TokenAltaExpira > now,
+                EstadoAccesoMovil = !string.IsNullOrEmpty(e.PinHash)
+                    ? "Activo"
+                    : (!string.IsNullOrEmpty(e.TokenAltaPin) && e.TokenAltaExpira > now ? "Pendiente" : "Sin Acceso")
             })
             .ToListAsync();
 
