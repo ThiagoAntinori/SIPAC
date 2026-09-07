@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SIPAC.API.Data;
 using SIPAC.API.DTOs.Egresos;
 using SIPAC.API.Entities;
+using SIPAC.API.Services;
 
 namespace SIPAC.API.Controllers;
 
@@ -14,10 +15,12 @@ namespace SIPAC.API.Controllers;
 public class EgresosController : ControllerBase
 {
     private readonly SipacDbContext _context;
+    private readonly NotificacionService _notificacionService;
 
-    public EgresosController(SipacDbContext context)
+    public EgresosController(SipacDbContext context, NotificacionService notificacionService)
     {
         _context = context;
+        _notificacionService = notificacionService;
     }
 
     [HttpGet]
@@ -134,6 +137,16 @@ public class EgresosController : ControllerBase
         _context.BitacoraOt.Add(bitacora);
 
         await _context.SaveChangesAsync();
+
+        // Notificación de bajo stock (fire-and-forget, no bloquea la respuesta)
+        if (articulo.StockActual <= articulo.StockMinimo)
+        {
+            _ = Task.Run(() => _notificacionService.SendAlertaStockBajoAsync(
+                articulo.Nombre,
+                articulo.StockActual,
+                articulo.StockMinimo,
+                articulo.UnidadMedida));
+        }
 
         var usuario = await _context.Usuarios.FindAsync(userId);
 

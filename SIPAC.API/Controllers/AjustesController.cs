@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SIPAC.API.Data;
 using SIPAC.API.DTOs.Ajustes;
 using SIPAC.API.Entities;
+using SIPAC.API.Services;
 
 namespace SIPAC.API.Controllers;
 
@@ -14,10 +15,12 @@ namespace SIPAC.API.Controllers;
 public class AjustesController : ControllerBase
 {
     private readonly SipacDbContext _context;
+    private readonly NotificacionService _notificacionService;
 
-    public AjustesController(SipacDbContext context)
+    public AjustesController(SipacDbContext context, NotificacionService notificacionService)
     {
         _context = context;
+        _notificacionService = notificacionService;
     }
 
     [HttpGet]
@@ -100,6 +103,17 @@ public class AjustesController : ControllerBase
 
         _context.AjustesInventario.Add(ajuste);
         await _context.SaveChangesAsync();
+
+        // Notificación de bajo stock para ajustes de Baja o Recuento físico (fire-and-forget)
+        var tipoEsBaja = !request.TipoAjuste.Equals("Alta", StringComparison.OrdinalIgnoreCase);
+        if (tipoEsBaja && articulo.StockActual <= articulo.StockMinimo)
+        {
+            _ = Task.Run(() => _notificacionService.SendAlertaStockBajoAsync(
+                articulo.Nombre,
+                articulo.StockActual,
+                articulo.StockMinimo,
+                articulo.UnidadMedida));
+        }
 
         var usuario = await _context.Usuarios.FindAsync(userId);
 
