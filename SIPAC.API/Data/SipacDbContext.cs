@@ -20,6 +20,7 @@ public class SipacDbContext : DbContext
     public DbSet<DetalleCompra> DetallesCompra => Set<DetalleCompra>();
     public DbSet<AjusteInventario> AjustesInventario => Set<AjusteInventario>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<SuscripcionPush> SuscripcionesPush => Set<SuscripcionPush>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -39,6 +40,7 @@ public class SipacDbContext : DbContext
         modelBuilder.Entity<AjusteInventario>().ToTable("ajustes_inventario");
         modelBuilder.Entity<Usuario>().ToTable("usuarios");
         modelBuilder.Entity<AuditLog>().ToTable("audit_logs");
+        modelBuilder.Entity<SuscripcionPush>().ToTable("suscripciones_push");
 
         // Articulo
         modelBuilder.Entity<Articulo>()
@@ -118,6 +120,13 @@ public class SipacDbContext : DbContext
         modelBuilder.Entity<RegistroBitacoraOt>()
             .HasKey(b => b.Id);
 
+        // SuscripcionPush
+        modelBuilder.Entity<SuscripcionPush>()
+            .HasOne(s => s.Responsable)
+            .WithMany(e => e.SuscripcionesPush)
+            .HasForeignKey(s => s.ResponsableId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // Unique constraints
         modelBuilder.Entity<Usuario>()
             .HasIndex(u => u.Username).IsUnique();
@@ -125,6 +134,10 @@ public class SipacDbContext : DbContext
             .HasIndex(e => e.Legajo)
             .IsUnique()
             .HasFilter("\"legajo\" IS NOT NULL AND \"legajo\" != ''");
+        modelBuilder.Entity<Empleado>()
+            .HasIndex(e => e.Usuario)
+            .IsUnique()
+            .HasFilter("\"usuario\" IS NOT NULL AND \"usuario\" != ''");
 
         // Prevent cascade delete loops
         modelBuilder.Entity<AuditLog>()

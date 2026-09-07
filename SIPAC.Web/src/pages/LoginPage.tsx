@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { authApi } from '../services/api';
 import toast from 'react-hot-toast';
-import { Wrench, Lock, User, KeyRound } from 'lucide-react';
+import { Wrench, Lock, User, KeyRound, Smartphone } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -44,8 +44,8 @@ export const LoginPage: React.FC = () => {
           <div className="inline-flex p-3 bg-orange-600 rounded-xl text-white mb-4 shadow-sm">
             <Wrench className="w-7 h-7" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">SIPAC</h1>
-          <p className="text-slate-600 text-sm mt-1 font-medium">Sistema Integral de Pañol y Abastecimiento</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">SITRAC</h1>
+          <p className="text-slate-600 text-sm mt-1 font-medium">Sistema Integral de Trabajos y Abastecimiento para Consorcios</p>
         </div>
 
         {/* Form */}
@@ -103,10 +103,21 @@ export const LoginPage: React.FC = () => {
             )}
           </button>
         </form>
+
+        <div className="mt-6 pt-5 border-t border-slate-100 text-center">
+          <p className="text-xs text-slate-500 mb-2 font-medium">¿Eres operario de mantenimiento?</p>
+          <Link
+            to="/login-operario"
+            className="w-full inline-flex items-center justify-center space-x-2 py-2.5 px-4 rounded-lg bg-slate-50 hover:bg-orange-50 border border-slate-200 hover:border-orange-200 text-slate-700 hover:text-orange-700 text-xs font-bold transition shadow-xs"
+          >
+            <Smartphone className="w-4 h-4 text-orange-600" />
+            <span>Acceso Operarios con PIN de 4 dígitos</span>
+          </Link>
+        </div>
       </div>
 
       <p className="mt-4 text-xs text-slate-500 font-medium z-10">
-        BASI Fix · Sistema de Pañol y Mantenimiento
+        SITRAC · Sistema Integral de Trabajos y Abastecimiento para Consorcios
       </p>
     </div>
   );

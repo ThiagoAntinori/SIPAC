@@ -1,0 +1,24 @@
+{
+  "name": "SITRAC - Portal Móvil de Operarios",
+  "short_name": "SITRAC Móvil",
+  "description": "Portal móvil de autoservicio para operarios y personal técnico de consorcios SITRAC",
+  "description": "Portal móvil de autoservicio para operarios - Sistema Integral de Trabajos y Abastecimiento para Consorcios (SITRAC)",
+  "start_url": "/operario",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#ea580c",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

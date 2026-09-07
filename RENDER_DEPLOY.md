@@ -1,6 +1,8 @@
 # Guía de Despliegue de SIPAC en Render con Docker
+# Guía de Despliegue de SITRAC en Render con Docker
 
 Esta guía explica paso a paso cómo desplegar la solución completa de **SIPAC** (Web API en .NET 8 + Frontend en React) en **Render** utilizando contenedores Docker.
+Esta guía explica paso a paso cómo desplegar la solución completa de **SITRAC** (Sistema Integral de Trabajos y Abastecimiento para Consorcios - Web API en .NET 8 + Frontend en React) en **Render** utilizando contenedores Docker.
 
 ---
 
@@ -100,6 +102,7 @@ Una vez que Render termine el build y despliegue:
    {
      "status": "healthy",
      "service": "SIPAC API",
+     "service": "SITRAC API",
      "timestamp": "2026-09-04T..."
    }
    ```
@@ -109,6 +112,7 @@ Una vez que Render termine el build y despliegue:
 
 3. **Frontend Integrado**:
    Navega a `https://tu-servicio.onrender.com/` para interactuar con la interfaz completa de SIPAC en React.
+   Navega a `https://tu-servicio.onrender.com/` para interactuar con la interfaz completa de SITRAC en React.
 
 ---
 

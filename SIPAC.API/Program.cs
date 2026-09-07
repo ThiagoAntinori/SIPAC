@@ -35,10 +35,37 @@ var tursoUrl = Environment.GetEnvironmentVariable("TURSO_DATABASE_URL")
     ?? builder.Configuration.GetConnectionString("TursoConnection");
 var tursoToken = Environment.GetEnvironmentVariable("TURSO_AUTH_TOKEN");
 
+var useTestDb = string.Equals(Environment.GetEnvironmentVariable("USE_TEST_DB"), "true", StringComparison.OrdinalIgnoreCase)
+    || string.Equals(builder.Configuration["USE_TEST_DB"], "true", StringComparison.OrdinalIgnoreCase);
+
 builder.Services.AddDbContext<SipacDbContext>((sp, options) =>
 {
     var interceptor = sp.GetRequiredService<AuditInterceptor>();
     options.AddInterceptors(interceptor);
+
+    // 0. Modo Testing Local Explícito (Aislamiento de producción)
+    if (useTestDb)
+    {
+        var testDbName = "sitrac_test.db";
+        var testDbPath = File.Exists(testDbName)
+            ? Path.GetFullPath(testDbName)
+            : (File.Exists(Path.Combine("..", testDbName))
+                ? Path.GetFullPath(Path.Combine("..", testDbName))
+                : Path.GetFullPath(testDbName));
+
+        var testConn = $"Data Source={testDbPath}";
+
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("====================================================================");
+        Console.WriteLine($"[Database] ⚠️ MODO TESTING ACTIVO: Conectado a base local SQLite:");
+        Console.WriteLine($"[Database] 📂 Archivo: {testDbPath}");
+        Console.WriteLine($"[Database] 🛡️ Base de datos Turso de PRODUCCIÓN queda 100% PROTEGIDA.");
+        Console.WriteLine("====================================================================");
+        Console.ResetColor();
+
+        options.UseSqlite(testConn);
+        return;
+    }
 
     // 1. Prioridad: Turso Cloud (libSQL)
     if (!string.IsNullOrWhiteSpace(tursoUrl))
@@ -113,6 +140,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<StockAlertService>();
 builder.Services.AddSingleton<CloudStorageService>();
 builder.Services.AddSingleton<NotificacionService>();
+builder.Services.AddSingleton<PushNotificationService>();
 builder.Services.AddHttpClient();
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
@@ -150,9 +178,9 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "SIPAC API",
+        Title = "SITRAC API",
         Version = "v1",
-        Description = "Sistema Integral de Pañol y Abastecimiento para Consorcios"
+        Description = "Sistema Integral de Trabajos y Abastecimiento para Consorcios"
     });
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -184,14 +212,14 @@ if (app.Environment.IsDevelopment() || app.Environment.IsStaging() || enableSwag
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "SIPAC API v1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "SITRAC API v1");
         c.RoutePrefix = "swagger";
     });
 }
 
 // ── Health checks para Render y orquestadores ─────────────────────────────────
-app.MapGet("/healthz", () => Results.Ok(new { status = "healthy", service = "SIPAC API", timestamp = DateTime.UtcNow }));
-app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", service = "SIPAC API", timestamp = DateTime.UtcNow }));
+app.MapGet("/healthz", () => Results.Ok(new { status = "healthy", service = "SITRAC API", timestamp = DateTime.UtcNow }));
+app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", service = "SITRAC API", timestamp = DateTime.UtcNow }));
 
 app.UseCors();
 app.UseAuthentication();

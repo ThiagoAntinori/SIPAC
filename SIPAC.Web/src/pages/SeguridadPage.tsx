@@ -100,7 +100,7 @@ export const SeguridadPage: React.FC = () => {
           rol,
           activo,
         };
-        return usuariosApi.update(editingUser.id, data);
+        return usuariosApi.update(Number(editingUser.id), data);
       } else {
         const data: CrearUsuarioRequest = {
           nombreCompleto,
@@ -125,7 +125,7 @@ export const SeguridadPage: React.FC = () => {
   const cambiarPasswordMutation = useMutation({
     mutationFn: async () => {
       if (!targetUserForPassword) return;
-      return usuariosApi.cambiarPassword(targetUserForPassword.id, { nuevaPassword });
+      return usuariosApi.cambiarPassword(Number(targetUserForPassword.id), { nuevaPassword });
     },
     onSuccess: (res: any) => {
       toast.success(res?.message || 'Contraseña actualizada exitosamente');
@@ -183,7 +183,9 @@ export const SeguridadPage: React.FC = () => {
     setNombreCompleto(u.nombreCompleto);
     setUsername(u.username);
     setPassword('');
-    setRol(u.rol);
+    if (u.rol === 'Admin' || u.rol === 'Pañolero' || u.rol === 'Supervisor') {
+      setRol(u.rol);
+    }
     setActivo(u.activo);
     setUserModalOpen(true);
   };
@@ -466,7 +468,7 @@ export const SeguridadPage: React.FC = () => {
 
                           {/* Toggle Active */}
                           <button
-                            onClick={() => toggleActivoMutation.mutate(u.id)}
+                            onClick={() => toggleActivoMutation.mutate(Number(u.id))}
                             disabled={isSelf && u.activo}
                             className={`p-1.5 rounded-md border transition-colors ${
                               isSelf && u.activo
@@ -749,7 +751,7 @@ export const SeguridadPage: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => deleteMutation.mutate(targetUserForDelete.id)}
+                  onClick={() => deleteMutation.mutate(Number(targetUserForDelete.id))}
                   disabled={deleteMutation.isPending}
                   className="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-md text-sm font-semibold shadow-xs transition-all"
                 >

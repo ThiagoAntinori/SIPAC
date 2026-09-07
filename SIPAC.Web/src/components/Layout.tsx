@@ -60,8 +60,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Wrench className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="font-bold text-base text-slate-900 tracking-tight leading-none">SIPAC</h1>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">Gestión de Pañol</p>
+              <h1 className="font-bold text-base text-slate-900 tracking-tight leading-none">SITRAC</h1>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">Trabajos y Abastecimiento</p>
             </div>
           </div>
 
@@ -120,7 +120,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="p-1 bg-orange-600 rounded-md text-white">
               <Wrench className="w-4 h-4" />
             </div>
-            <span className="font-bold text-slate-900 tracking-tight">SIPAC</span>
+            <span className="font-bold text-slate-900 tracking-tight">SITRAC</span>
           </div>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

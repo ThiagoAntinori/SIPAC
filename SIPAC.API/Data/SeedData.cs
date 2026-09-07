@@ -30,6 +30,16 @@ public static class SeedData
             }
         }
 
+        // ── 0. Aplicar migraciones aditivas de operarios, estados y push ───────
+        try
+        {
+            await DbMigrationHelper.ApplyCustomMigrationsAsync(context);
+        }
+        catch (Exception exMig)
+        {
+            Console.WriteLine($"[SeedData] Error al aplicar migraciones personalizadas: {exMig.Message}");
+        }
+
         // ── 1. Seed Categorías de Pañol / Artículos ──────────────────────────────
         if (!await context.Categorias.AnyAsync())
         {
@@ -89,7 +99,7 @@ public static class SeedData
             await context.SaveChangesAsync();
         }
 
-        // ── 5. Seed Categorías de Trabajo / Rubros (BASI Fix) ─────────────────────
+        // ── 5. Seed Categorías de Trabajo / Rubros (SITRAC) ──────────────────────
         if (!await context.CategoriasTrabajo.AnyAsync())
         {
             var rubros = new List<CategoriaTrabajo>
@@ -269,7 +279,7 @@ public static class SeedData
             await context.SaveChangesAsync();
         }
 
-        // ── 8. Seed Órdenes de Trabajo (BASI Fix) y Auditoría ─────────────────────
+        // ── 8. Seed Órdenes de Trabajo (SITRAC) y Auditoría ──────────────────────
         if (!await context.OrdenesTrabajo.AnyAsync())
         {
             var resp1 = await context.Empleados.FirstOrDefaultAsync(r => r.NombreCompleto.Contains("Claudio")) ?? await context.Empleados.FirstOrDefaultAsync();
