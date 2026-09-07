@@ -15,7 +15,9 @@ public class OtDto
     public string CategoriaNombre { get; set; } = string.Empty;
     public string ProblemaReportado { get; set; } = string.Empty;
     public string? SolucionRealizada { get; set; }
+    public string? MotivoSuspension { get; set; }
     public string Estado { get; set; } = "Pendiente";
+    public bool LeidaPorOperario { get; set; }
     public string? Observaciones { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

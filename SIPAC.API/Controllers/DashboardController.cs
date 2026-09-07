@@ -44,8 +44,12 @@ public class DashboardController : ControllerBase
             })
             .ToListAsync();
 
+        var estadosActivos = new[] { "pendiente", "en proceso", "pendiente aprobacion finalizacion", "pendiente aprobacion suspension" };
         var ordenesActivas = await _context.OrdenesTrabajo
-            .CountAsync(o => o.Estado.ToLower() == "pendiente" || o.Estado.ToLower() == "en proceso");
+            .CountAsync(o => estadosActivos.Contains(o.Estado.ToLower()));
+
+        var ordenesPendientesAprobacion = await _context.OrdenesTrabajo
+            .CountAsync(o => o.Estado.ToLower() == "pendiente aprobacion finalizacion" || o.Estado.ToLower() == "pendiente aprobacion suspension");
 
         var cincoDiasAtras = DateTime.UtcNow.AddDays(-5);
         var alertasInactividad = await _context.OrdenesTrabajo
@@ -130,6 +134,7 @@ public class DashboardController : ControllerBase
             TotalArticulos = totalArticulos,
             ArticulosStockBajo = stockCriticoList.Count,
             TotalOrdenesActivas = ordenesActivas,
+            TotalOrdenesPendientesAprobacion = ordenesPendientesAprobacion,
             TotalAlertasInactividad = alertasInactividad,
             EgresosHoy = egresosHoy,
             StockCritico = stockCriticoList,

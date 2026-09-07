@@ -9,6 +9,7 @@ public class DashboardSummaryDto
     public int TotalArticulos { get; set; }
     public int ArticulosStockBajo { get; set; }
     public int TotalOrdenesActivas { get; set; }
+    public int TotalOrdenesPendientesAprobacion { get; set; }
     public int TotalAlertasInactividad { get; set; }
     public int EgresosHoy { get; set; }
     public List<ArticuloDto> StockCritico { get; set; } = new();

@@ -31,8 +31,14 @@ public class OrdenTrabajo
     [Column("solucion_realizada")]
     public string? SolucionRealizada { get; set; }
 
+    [Column("motivo_suspension")]
+    public string? MotivoSuspension { get; set; }
+
+    [Column("leida_por_operario")]
+    public bool LeidaPorOperario { get; set; } = false;
+
     [Column("estado")]
-    public string Estado { get; set; } = "Pendiente"; // Pendiente, En Proceso, Finalizado, Suspendido, Cancelado
+    public string Estado { get; set; } = "Pendiente"; // Pendiente, En Proceso, Pendiente Aprobacion Finalizacion, Pendiente Aprobacion Suspension, Finalizado, Suspendido, Cancelado
 
     [Column("observaciones")]
     public string? Observaciones { get; set; }

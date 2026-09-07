@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SIPAC.API.Data;
 using SIPAC.API.DTOs.OrdenesTrabajo;
 using SIPAC.API.Entities;
+using SIPAC.API.Services;
 
 namespace SIPAC.API.Controllers;
 
@@ -13,10 +14,12 @@ namespace SIPAC.API.Controllers;
 public class OrdenesTrabajoController : ControllerBase
 {
     private readonly SipacDbContext _context;
+    private readonly PushNotificationService _pushService;
 
-    public OrdenesTrabajoController(SipacDbContext context)
+    public OrdenesTrabajoController(SipacDbContext context, PushNotificationService pushService)
     {
         _context = context;
+        _pushService = pushService;
     }
 
     [HttpGet]
@@ -40,7 +43,15 @@ public class OrdenesTrabajoController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(estado))
         {
-            query = query.Where(o => o.Estado.ToLower() == estado.Trim().ToLower());
+            var estClean = estado.Trim().ToLower();
+            if (estClean == "aprobaciones" || estClean == "pendientes_aprobacion")
+            {
+                query = query.Where(o => o.Estado.Contains("Aprobacion"));
+            }
+            else
+            {
+                query = query.Where(o => o.Estado.ToLower() == estClean);
+            }
         }
 
         if (responsableId.HasValue && responsableId.Value != Guid.Empty)
@@ -168,6 +179,25 @@ public class OrdenesTrabajoController : ControllerBase
         ot.Responsable = responsable;
         ot.Categoria = categoria;
         ot.Bitacora = new List<RegistroBitacoraOt> { bitacora };
+
+        // Disparar notificación Web Push al operario asignado
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _pushService.SendNotificationToResponsableAsync(
+                    ot.ResponsableId,
+                    "🛠️ Nueva tarea asignada",
+                    $"{categoria.Nombre} en {uf.DisplayNombre}: {ot.ProblemaReportado}",
+                    "/operario",
+                    $"ot-{ot.Id}"
+                );
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[WebPush] Error al disparar notificación en Create OT: {ex.Message}");
+            }
+        });
 
         return CreatedAtAction(nameof(GetById), new { id = ot.Id }, MapToDto(ot));
     }
@@ -325,6 +355,97 @@ public class OrdenesTrabajoController : ControllerBase
         return Ok(new { message = "Estado actualizado exitosamente", estado = ot.Estado });
     }
 
+    [HttpPatch("{id}/aprobar-finalizacion")]
+    public async Task<ActionResult> AprobarFinalizacion(Guid id)
+    {
+        var ot = await _context.OrdenesTrabajo
+            .Include(o => o.Bitacora)
+            .FirstOrDefaultAsync(o => o.Id == id);
+
+        if (ot == null) return NotFound(new { message = $"OT #{id} no encontrada" });
+
+        if (string.IsNullOrWhiteSpace(ot.SolucionRealizada))
+            return BadRequest(new { message = "La OT no cuenta con solución realizada documentada." });
+
+        ot.Estado = "Finalizado";
+        ot.UpdatedAt = DateTime.UtcNow;
+
+        var supervisor = User.Identity?.Name ?? "Supervisor";
+        var bitacora = new RegistroBitacoraOt
+        {
+            Id = Guid.NewGuid(),
+            OrdenTrabajoId = ot.Id,
+            TipoOperacion = "APROBACION_SUPERIOR",
+            DetalleCambio = $"Aprobación formal de finalización otorgada por {supervisor}. Trabajo concluido.",
+            FechaHora = DateTime.UtcNow
+        };
+        _context.BitacoraOt.Add(bitacora);
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Orden de Trabajo formalmente finalizada y aprobada.", estado = ot.Estado });
+    }
+
+    [HttpPatch("{id}/aprobar-suspension")]
+    public async Task<ActionResult> AprobarSuspension(Guid id)
+    {
+        var ot = await _context.OrdenesTrabajo
+            .Include(o => o.Bitacora)
+            .FirstOrDefaultAsync(o => o.Id == id);
+
+        if (ot == null) return NotFound(new { message = $"OT #{id} no encontrada" });
+
+        ot.Estado = "Suspendido";
+        ot.UpdatedAt = DateTime.UtcNow;
+
+        var supervisor = User.Identity?.Name ?? "Supervisor";
+        var motivo = ot.MotivoSuspension ?? "Sin motivo especificado";
+        var bitacora = new RegistroBitacoraOt
+        {
+            Id = Guid.NewGuid(),
+            OrdenTrabajoId = ot.Id,
+            TipoOperacion = "APROBACION_SUPERIOR",
+            DetalleCambio = $"Suspensión aprobada formalmente por {supervisor}. Motivo documentado: {motivo}",
+            FechaHora = DateTime.UtcNow
+        };
+        _context.BitacoraOt.Add(bitacora);
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Suspensión de OT aprobada formalmente.", estado = ot.Estado });
+    }
+
+    [HttpPatch("{id}/rechazar-aprobacion")]
+    public async Task<ActionResult> RechazarAprobacion(Guid id, [FromBody] SIPAC.API.DTOs.Operarios.RechazarAprobacionRequest request)
+    {
+        var ot = await _context.OrdenesTrabajo
+            .Include(o => o.Bitacora)
+            .FirstOrDefaultAsync(o => o.Id == id);
+
+        if (ot == null) return NotFound(new { message = $"OT #{id} no encontrada" });
+
+        var supervisor = User.Identity?.Name ?? "Supervisor";
+        ot.Estado = "En Proceso";
+        ot.LeidaPorOperario = false; // Alerta al operario en su portal móvil
+        ot.UpdatedAt = DateTime.UtcNow;
+
+        var obs = request.Observaciones.Trim();
+        ot.Observaciones = string.IsNullOrWhiteSpace(ot.Observaciones)
+            ? $"[Observación Superior {supervisor}]: {obs}"
+            : $"{ot.Observaciones}\n[Observación Superior {supervisor}]: {obs}";
+
+        var bitacora = new RegistroBitacoraOt
+        {
+            Id = Guid.NewGuid(),
+            OrdenTrabajoId = ot.Id,
+            TipoOperacion = "RECHAZO_APROBACION",
+            DetalleCambio = $"Solicitud rechazada y devuelta a 'En Proceso' por {supervisor}. Observación: {obs}",
+            FechaHora = DateTime.UtcNow
+        };
+        _context.BitacoraOt.Add(bitacora);
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Orden devuelta al operario a estado 'En Proceso'.", estado = ot.Estado });
+    }
+
     [HttpDelete("{id}")]
     public async Task<ActionResult> Delete(Guid id)
     {
@@ -407,7 +528,9 @@ public class OrdenesTrabajoController : ControllerBase
             CategoriaNombre = o.Categoria?.Nombre ?? "",
             ProblemaReportado = o.ProblemaReportado,
             SolucionRealizada = o.SolucionRealizada,
+            MotivoSuspension = o.MotivoSuspension,
             Estado = o.Estado,
+            LeidaPorOperario = o.LeidaPorOperario,
             Observaciones = o.Observaciones,
             CreatedAt = o.CreatedAt,
             UpdatedAt = o.UpdatedAt,

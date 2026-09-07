@@ -9,6 +9,7 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -82,7 +83,7 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* KPI Stat Pills */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="p-4 bg-white border border-slate-200 rounded-lg shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Artículos</p>
@@ -112,6 +113,51 @@ export const DashboardPage: React.FC = () => {
             <ClipboardList className="w-5 h-5" />
           </div>
         </div>
+
+        <Link
+          to="/ordenes?estado=aprobaciones"
+          className={`p-4 rounded-lg shadow-sm flex items-center justify-between transition hover:shadow-md ${
+            (resumen.totalOrdenesPendientesAprobacion || 0) > 0
+              ? 'bg-amber-50 border border-amber-300 hover:bg-amber-100/70'
+              : 'bg-white border border-slate-200'
+          }`}
+          title="Ver órdenes pendientes de aprobación"
+        >
+          <div>
+            <div className="flex items-center space-x-1.5">
+              <p
+                className={`text-xs font-bold uppercase tracking-wider ${
+                  (resumen.totalOrdenesPendientesAprobacion || 0) > 0
+                    ? 'text-amber-900'
+                    : 'text-slate-600'
+                }`}
+              >
+                Por Aprobar
+              </p>
+              {(resumen.totalOrdenesPendientesAprobacion || 0) > 0 && (
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              )}
+            </div>
+            <p
+              className={`text-2xl font-bold mt-0.5 tabular-nums ${
+                (resumen.totalOrdenesPendientesAprobacion || 0) > 0
+                  ? 'text-amber-950'
+                  : 'text-slate-900'
+              }`}
+            >
+              {resumen.totalOrdenesPendientesAprobacion || 0}
+            </p>
+          </div>
+          <div
+            className={`p-2.5 rounded-lg ${
+              (resumen.totalOrdenesPendientesAprobacion || 0) > 0
+                ? 'bg-amber-100 text-amber-700'
+                : 'bg-slate-100 text-slate-500'
+            }`}
+          >
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+        </Link>
 
         <div className={`p-4 rounded-lg shadow-sm flex items-center justify-between ${
           resumen.totalAlertasInactividad > 0
