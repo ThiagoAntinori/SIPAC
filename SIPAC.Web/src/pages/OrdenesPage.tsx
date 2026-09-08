@@ -28,9 +28,11 @@ import {
   FileText,
   Check,
   Tags,
+  FileDown,
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { generarOrdenTrabajoPdf } from '../utils/pdfGenerator';
 
 // Design tokens
 const inputCls = 'w-full px-3 h-9 bg-white border border-slate-300 rounded-md text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all font-medium';
@@ -359,6 +361,16 @@ export const OrdenesPage: React.FC = () => {
   const openDeleteModal = (ot: OrdenTrabajo) => {
     setSelectedOt(ot);
     setDeleteModalOpen(true);
+  };
+
+  const handleDescargarPdf = (ot: OrdenTrabajo) => {
+    try {
+      generarOrdenTrabajoPdf(ot, ot.responsableNombre);
+      toast.success(`Comprobante de OT #${ot.numeroOT || ot.idOt} descargado`);
+    } catch (err) {
+      console.error('Error al generar PDF:', err);
+      toast.error('No se pudo generar el documento PDF');
+    }
   };
 
   const handleQuickStatusChange = (ot: OrdenTrabajo, newStatus: string) => {
@@ -742,6 +754,13 @@ export const OrdenesPage: React.FC = () => {
                   </div>
 
                   <div className="flex items-center space-x-1 shrink-0 ml-auto">
+                    <button
+                      onClick={() => handleDescargarPdf(ot)}
+                      title="Descargar Comprobante PDF (Impresión / Terreno)"
+                      className="p-1.5 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-md transition-colors"
+                    >
+                      <FileDown className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => openDetalleModal(ot)}
                       title="Ver Bitácora y Detalle Completo"
@@ -1350,7 +1369,15 @@ export const OrdenesPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-slate-100 flex justify-end shrink-0">
+            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleDescargarPdf(selectedOt)}
+                className="px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-xs active:scale-95"
+              >
+                <FileDown className="w-4 h-4" />
+                <span>Descargar Comprobante PDF</span>
+              </button>
               <button onClick={() => setDetalleModalOpen(false)} className={btnSecondary}>
                 Cerrar Detalle
               </button>
