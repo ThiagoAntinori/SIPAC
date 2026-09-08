@@ -52,7 +52,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-[#F1F5F9] text-slate-900 flex">
       {/* Sidebar Desktop */}
-      <aside className="hidden md:flex flex-col w-60 bg-white border-r border-slate-200 p-3 justify-between shrink-0 shadow-xs">
+      <aside className="hidden lg:flex flex-col w-60 bg-white border-r border-slate-200 p-3 justify-between shrink-0 shadow-xs">
         <div>
           {/* Logo Brand */}
           <div className="flex items-center space-x-2.5 px-2 py-3 mb-3 border-b border-slate-200">
@@ -115,7 +115,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Navbar Mobile */}
-        <header className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shadow-xs sticky top-0 z-30">
+        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shadow-xs sticky top-0 z-30">
           <div className="flex items-center space-x-2">
             <div className="p-1 bg-orange-600 rounded-md text-white">
               <Wrench className="w-4 h-4" />
@@ -132,7 +132,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         {/* Mobile menu dropdown */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-b border-slate-200 shadow-sm px-3 py-2 space-y-0.5 z-20">
+          <div className="lg:hidden bg-white border-b border-slate-200 shadow-sm px-3 py-2 space-y-0.5 z-20">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -165,7 +165,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         )}
 
         {/* Page Content */}
-        <main className="flex-1 p-4 md:p-6 overflow-y-auto">
+        <main className="flex-1 p-4 sm:p-5 lg:p-6 overflow-y-auto">
           {children}
         </main>
       </div>

@@ -426,7 +426,7 @@ export const OrdenesPage: React.FC = () => {
       </div>
 
       {/* KPI Quick Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
         {[
           { label: 'Total OTs', value: stats.total, active: estadoFilter === '' && !soloAlertas, onClick: () => { setEstadoFilter(''); setSoloAlertas(false); }, activeCls: 'bg-slate-900 border-slate-700 text-white', valueCls: 'text-white' },
           { label: 'Pendientes', value: stats.pendientes, active: estadoFilter === 'Pendiente' && !soloAlertas, onClick: () => { setEstadoFilter('Pendiente'); setSoloAlertas(false); }, activeCls: 'bg-amber-50 border-amber-200 text-amber-800', valueCls: 'text-amber-900' },
@@ -450,7 +450,7 @@ export const OrdenesPage: React.FC = () => {
 
         <button
           onClick={() => { setSoloAlertas(!soloAlertas); if (!soloAlertas) setEstadoFilter(''); }}
-          className={`col-span-2 sm:col-span-1 p-3 rounded-lg border text-left transition-all duration-150 ${
+          className={`p-3 rounded-lg border text-left transition-all duration-150 ${
             soloAlertas
               ? 'bg-rose-50 border-rose-300 text-rose-800'
               : stats.alertas > 0
@@ -468,7 +468,7 @@ export const OrdenesPage: React.FC = () => {
 
       {/* Filter & Search Bar */}
       <div className="p-3 bg-white border border-slate-200 rounded-lg shadow-sm space-y-2.5">
-        <div className="flex flex-col md:flex-row items-center gap-2.5">
+        <div className="flex flex-col sm:flex-row items-center gap-2.5">
           <div className="relative flex-1 w-full">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
@@ -488,7 +488,7 @@ export const OrdenesPage: React.FC = () => {
           <select
             value={rubroFilter}
             onChange={(e) => setRubroFilter(e.target.value)}
-            className="w-full md:w-44 px-3 h-9 bg-white border border-slate-300 rounded-md text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
+            className="w-full sm:w-44 px-3 h-9 bg-white border border-slate-300 rounded-md text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
           >
             <option value="">Todos los Rubros</option>
             {rubros.map((r) => (
@@ -499,7 +499,7 @@ export const OrdenesPage: React.FC = () => {
           <select
             value={responsableFilter}
             onChange={(e) => setResponsableFilter(e.target.value)}
-            className="w-full md:w-44 px-3 h-9 bg-white border border-slate-300 rounded-md text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
+            className="w-full sm:w-44 px-3 h-9 bg-white border border-slate-300 rounded-md text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
           >
             <option value="">Todos los Responsables</option>
             {responsables.map((resp) => (
@@ -538,7 +538,7 @@ export const OrdenesPage: React.FC = () => {
           <p className="text-xs text-slate-400 mt-1">Pruebe ajustando los filtros de búsqueda o cree una nueva OT.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3.5">
           {ordenes.map((ot) => {
             const isAlert = ot.esAlertaInactividad;
             return (
@@ -637,12 +637,12 @@ export const OrdenesPage: React.FC = () => {
                       <p className="text-xs text-slate-700 italic bg-white/80 p-2 rounded border border-amber-200">
                         &ldquo;{ot.solucionRealizada || 'Trabajo completado'}&rdquo;
                       </p>
-                      <div className="flex items-center space-x-1.5 pt-1">
+                      <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 pt-1">
                         <button
                           type="button"
                           onClick={() => aprobarFinalizacionMutation.mutate(ot.idOt)}
                           disabled={aprobarFinalizacionMutation.isPending}
-                          className="flex-1 py-1.5 px-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-md text-xs font-bold transition flex items-center justify-center space-x-1 shadow-xs"
+                          className="flex-1 min-w-[120px] py-1.5 px-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-md text-xs font-bold transition flex items-center justify-center space-x-1 shadow-xs shrink-0"
                         >
                           <Check className="w-3.5 h-3.5" />
                           <span>Aprobar Cierre</span>
@@ -654,7 +654,7 @@ export const OrdenesPage: React.FC = () => {
                             setRechazarObservaciones('');
                             setRechazarModalOpen(true);
                           }}
-                          className="py-1.5 px-2.5 bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 rounded-md text-xs font-semibold transition"
+                          className="py-1.5 px-2.5 bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 rounded-md text-xs font-semibold transition shrink-0"
                         >
                           Rechazar
                         </button>
@@ -672,12 +672,12 @@ export const OrdenesPage: React.FC = () => {
                       <p className="text-xs text-slate-700 italic bg-white/80 p-2 rounded border border-rose-200">
                         &ldquo;{ot.motivoSuspension || 'Sin motivo especificado'}&rdquo;
                       </p>
-                      <div className="flex items-center space-x-1.5 pt-1">
+                      <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 pt-1">
                         <button
                           type="button"
                           onClick={() => aprobarSuspensionMutation.mutate(ot.idOt)}
                           disabled={aprobarSuspensionMutation.isPending}
-                          className="flex-1 py-1.5 px-2.5 bg-violet-600 hover:bg-violet-700 active:scale-95 text-white rounded-md text-xs font-bold transition flex items-center justify-center space-x-1 shadow-xs"
+                          className="flex-1 min-w-[120px] py-1.5 px-2.5 bg-violet-600 hover:bg-violet-700 active:scale-95 text-white rounded-md text-xs font-bold transition flex items-center justify-center space-x-1 shadow-xs shrink-0"
                         >
                           <Check className="w-3.5 h-3.5" />
                           <span>Aprobar Suspensión</span>
@@ -689,7 +689,7 @@ export const OrdenesPage: React.FC = () => {
                             setRechazarObservaciones('');
                             setRechazarModalOpen(true);
                           }}
-                          className="py-1.5 px-2.5 bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 rounded-md text-xs font-semibold transition"
+                          className="py-1.5 px-2.5 bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 rounded-md text-xs font-semibold transition shrink-0"
                         >
                           Rechazar
                         </button>
@@ -724,22 +724,24 @@ export const OrdenesPage: React.FC = () => {
                 </div>
 
                 {/* Card Actions & Footer */}
-                <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                  <select
-                    value={ot.estado}
-                    onChange={(e) => handleQuickStatusChange(ot, e.target.value)}
-                    className="px-2 py-1 bg-white border border-slate-300 hover:border-slate-400 rounded-md text-slate-800 text-xs focus:outline-none focus:ring-1 focus:ring-slate-900/10 font-semibold transition-colors"
-                  >
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="En Proceso">En Proceso</option>
-                    <option value="Pendiente Aprobacion Finalizacion">Pend. Aprobación Cierre</option>
-                    <option value="Pendiente Aprobacion Suspension">Pend. Aprobación Suspensión</option>
-                    <option value="Finalizado">Finalizado</option>
-                    <option value="Suspendido">Suspendido</option>
-                    <option value="Cancelado">Cancelado</option>
-                  </select>
+                <div className="px-3.5 py-2.5 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
+                  <div className="min-w-0 flex-1">
+                    <select
+                      value={ot.estado}
+                      onChange={(e) => handleQuickStatusChange(ot, e.target.value)}
+                      className="w-full max-w-[150px] sm:max-w-[170px] px-2 py-1 bg-white border border-slate-300 hover:border-slate-400 rounded-md text-slate-800 text-xs focus:outline-none focus:ring-1 focus:ring-slate-900/10 font-semibold transition-colors truncate"
+                    >
+                      <option value="Pendiente">Pendiente</option>
+                      <option value="En Proceso">En Proceso</option>
+                      <option value="Pendiente Aprobacion Finalizacion">Pend. Cierre</option>
+                      <option value="Pendiente Aprobacion Suspension">Pend. Suspensión</option>
+                      <option value="Finalizado">Finalizado</option>
+                      <option value="Suspendido">Suspendido</option>
+                      <option value="Cancelado">Cancelado</option>
+                    </select>
+                  </div>
 
-                  <div className="flex items-center space-x-1">
+                  <div className="flex items-center space-x-1 shrink-0 ml-auto">
                     <button
                       onClick={() => openDetalleModal(ot)}
                       title="Ver Bitácora y Detalle Completo"
