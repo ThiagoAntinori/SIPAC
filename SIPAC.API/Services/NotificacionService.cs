@@ -1,9 +1,6 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using MailKit.Net.Smtp;
-using MailKit.Security;
-using MimeKit;
 
 namespace SIPAC.API.Services;
 
@@ -12,6 +9,7 @@ public class NotificacionService
     private readonly IConfiguration _configuration;
     private readonly ILogger<NotificacionService> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
+
     public NotificacionService(
         IConfiguration configuration,
         ILogger<NotificacionService> logger,
@@ -24,181 +22,156 @@ public class NotificacionService
 
     public Task SendAlertAsync(string destinatario, string asunto, string mensaje)
     {
-        _logger.LogInformation("[Notificacion] Alerta enviada a {Destinatario}: {Asunto} - {Mensaje}", destinatario, asunto, mensaje);
+        _logger.LogInformation("[Notificacion] Alerta: Destinatario {Destinatario} - {Asunto}: {Mensaje}", destinatario, asunto, mensaje);
         return Task.CompletedTask;
     }
 
-    public async Task<bool> SendEmailAsync(string toEmail, string subject, string htmlBody)
+    /// <summary>
+    /// Envío de correo electrónico a través de la API REST de Brevo (Sendinblue) por HTTPS (puerto 443).
+    /// </summary>
+    public async Task<bool> SendEmailAsync(string toEmail, string subject, string htmlContent, string? toName = null)
     {
-        // 1. Prioridad: API HTTP de Resend (HTTPS puerto 443 - no bloqueado por Render ni firewalls)
-        var resendApiKey = Environment.GetEnvironmentVariable("RESEND_API_KEY")
-            ?? Environment.GetEnvironmentVariable("RESEND__API_KEY")
-            ?? _configuration["Resend:ApiKey"]
-            ?? _configuration["Notifications:Resend:ApiKey"];
+        var apiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY")
+            ?? Environment.GetEnvironmentVariable("BREVO__API_KEY")
+            ?? _configuration["Brevo:ApiKey"];
 
-        if (!string.IsNullOrWhiteSpace(resendApiKey))
+        var senderEmail = Environment.GetEnvironmentVariable("BREVO_SENDER_EMAIL")
+            ?? Environment.GetEnvironmentVariable("BREVO__SENDER_EMAIL")
+            ?? _configuration["Brevo:SenderEmail"];
+
+        var senderName = Environment.GetEnvironmentVariable("BREVO_SENDER_NAME")
+            ?? Environment.GetEnvironmentVariable("BREVO__SENDER_NAME")
+            ?? _configuration["Brevo:SenderName"]
+            ?? "SITRAC Consorcio";
+
+        if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(senderEmail))
         {
-            return await SendViaResendAsync(resendApiKey.Trim(), toEmail, subject, htmlBody);
+            _logger.LogWarning("[Brevo] Credenciales no configuradas (BREVO_API_KEY o BREVO_SENDER_EMAIL faltantes). Correo no enviado a {To}: '{Subject}'", toEmail, subject);
+            return false;
         }
 
-        // 2. Fallback: SMTP clásico (MailKit)
-        return await SendViaSmtpAsync(toEmail, subject, htmlBody);
-    }
-
-    private async Task<bool> SendViaResendAsync(string apiKey, string toEmail, string subject, string htmlBody)
-    {
         try
         {
-            var fromEmail = Environment.GetEnvironmentVariable("RESEND_FROM")
-                ?? Environment.GetEnvironmentVariable("RESEND__FROM")
-                ?? _configuration["Resend:From"]
-                ?? "SITRAC <onboarding@resend.dev>";
-
             var payload = new
             {
-                from = fromEmail,
-                to = new[] { toEmail },
+                sender = new
+                {
+                    name = senderName,
+                    email = senderEmail.Trim()
+                },
+                to = new[]
+                {
+                    new
+                    {
+                        email = toEmail.Trim(),
+                        name = !string.IsNullOrWhiteSpace(toName) ? toName.Trim() : toEmail.Trim()
+                    }
+                },
                 subject = subject,
-                html = htmlBody
+                htmlContent = htmlContent
             };
 
             var client = _httpClientFactory.CreateClient();
-            using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.brevo.com/v3/smtp/email");
+            request.Headers.Add("api-key", apiKey.Trim());
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             request.Content = new StringContent(
                 JsonSerializer.Serialize(payload),
                 Encoding.UTF8,
                 "application/json");
 
             var response = await client.SendAsync(request);
-            var responseContent = await response.Content.ReadAsStringAsync();
+            var responseBody = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation("[Resend] Correo enviado exitosamente a {To}. Respuesta: {Response}", toEmail, responseContent);
+                _logger.LogInformation("[Brevo] Correo enviado exitosamente a {To}. Código: {StatusCode}, Respuesta: {Body}", toEmail, (int)response.StatusCode, responseBody);
                 return true;
             }
             else
             {
-                _logger.LogError("[Resend] Error ({StatusCode}) al despachar correo a {To}: {Response}", (int)response.StatusCode, toEmail, responseContent);
+                _logger.LogError("[Brevo] Error ({StatusCode}) al enviar correo a {To}. Respuesta: {Body}", (int)response.StatusCode, toEmail, responseBody);
                 return false;
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[Resend] Excepción al despachar correo vía API a {To}", toEmail);
+            _logger.LogError(ex, "[Brevo] Excepción de red al enviar correo vía API REST a {To}", toEmail);
             return false;
         }
     }
 
-    private async Task<bool> SendViaSmtpAsync(string toEmail, string subject, string htmlBody)
-    {
-        var smtpHost = Environment.GetEnvironmentVariable("NOTIFICATIONS__EMAIL__SMTPHOST")
-            ?? _configuration["Notifications:Email:SmtpHost"]
-            ?? "smtp.gmail.com";
-
-        var smtpPortStr = Environment.GetEnvironmentVariable("NOTIFICATIONS__EMAIL__SMTPPORT")
-            ?? _configuration["Notifications:Email:SmtpPort"]
-            ?? "587";
-
-        var smtpUser = Environment.GetEnvironmentVariable("NOTIFICATIONS__EMAIL__USERNAME")
-            ?? _configuration["Notifications:Email:Username"];
-
-        var smtpPass = Environment.GetEnvironmentVariable("NOTIFICATIONS__EMAIL__PASSWORD")
-            ?? _configuration["Notifications:Email:Password"];
-
-        if (string.IsNullOrWhiteSpace(smtpUser) || string.IsNullOrWhiteSpace(smtpPass))
-        {
-            _logger.LogWarning("[EmailService] Credenciales SMTP de Gmail no configuradas. Correo simulado para {To}: Asunto '{Subject}'", toEmail, subject);
-            _logger.LogWarning("[EmailService] Ni Resend ni SMTP configurados. Correo simulado para {To}: Asunto '{Subject}'", toEmail, subject);
-            return true;
-        }
-
-        try
-        {
-            var port = int.TryParse(smtpPortStr, out var p) ? p : 587;
-
-            var message = new MimeMessage();
-            message.From.Add(new MailboxAddress("SITRAC Sistema", smtpUser));
-            message.To.Add(new MailboxAddress(toEmail, toEmail));
-            message.Subject = subject;
-
-            var bodyBuilder = new BodyBuilder
-            {
-                HtmlBody = htmlBody
-            };
-            message.Body = bodyBuilder.ToMessageBody();
-
-            using var client = new SmtpClient();
-            client.Timeout = 10000; // 10 segundos máximo para evitar colgar hilos si el puerto está bloqueado
-            await client.ConnectAsync(smtpHost, port, SecureSocketOptions.StartTls);
-            await client.AuthenticateAsync(smtpUser, smtpPass);
-            await client.SendAsync(message);
-            await client.DisconnectAsync(true);
-
-            _logger.LogInformation("[EmailService] Correo enviado exitosamente a {To}", toEmail);
-            _logger.LogInformation("[EmailService] Correo SMTP enviado exitosamente a {To}", toEmail);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[EmailService] Error al despachar correo a {To}", toEmail);
-            _logger.LogError(ex, "[EmailService] Error SMTP al despachar correo a {To}", toEmail);
-            return false;
-        }
-    }
-
+    /// <summary>
+    /// Notificación de habilitación de acceso al Portal Móvil y activación de PIN para Operarios.
+    /// </summary>
     public async Task<bool> SendPinActivationEmailAsync(string toEmail, string nombreOperario, string usuario, string activationUrl)
     {
-        var subject = "SITRAC - Activación de PIN de Acceso Móvil";
-        var html = $@"
+        var subject = "SITRAC - Activación de cuenta y configuración de PIN";
+        var usuarioDisplay = usuario.StartsWith("@") ? usuario : $"@{usuario}";
+        var htmlContent = $@"
         <!DOCTYPE html>
-        <html>
+        <html lang='es'>
         <head>
           <meta charset='utf-8'>
+          <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+          <title>{subject}</title>
           <style>
-            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px; }}
-            .card {{ max-width: 540px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }}
-            .header {{ background-color: #0f172a; padding: 24px; text-align: center; color: #ffffff; }}
-            .header h1 {{ margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }}
-            .header p {{ margin: 4px 0 0; font-size: 13px; color: #94a3b8; }}
-            .content {{ padding: 28px; color: #334155; line-height: 1.6; font-size: 14px; }}
-            .highlight-box {{ background-color: #f1f5f9; border-left: 4px solid #ea580c; padding: 14px; border-radius: 6px; margin: 18px 0; }}
-            .btn {{ display: block; width: fit-content; margin: 24px auto; background-color: #ea580c; color: #ffffff !important; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; text-align: center; }}
-            .footer {{ padding: 20px; background-color: #f8fafc; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #f1f5f9; }}
+            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 24px; color: #1e293b; }}
+            .container {{ max-width: 560px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }}
+            .header {{ background-color: #0f172a; padding: 24px 32px; text-align: left; border-bottom: 3px solid #ea580c; }}
+            .header h1 {{ margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px; }}
+            .header p {{ margin: 4px 0 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }}
+            .body {{ padding: 32px; font-size: 14px; line-height: 1.6; color: #334155; }}
+            .greeting {{ font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #0f172a; }}
+            .credentials-box {{ background-color: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #ea580c; border-radius: 6px; padding: 16px; margin: 20px 0; }}
+            .credentials-box p {{ margin: 0; font-size: 13px; }}
+            .credentials-box strong {{ color: #0f172a; }}
+            .user-badge {{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 14px; font-weight: 700; color: #c2410c; background-color: #ffedd5; padding: 2px 8px; border-radius: 4px; border: 1px solid #fed7aa; }}
+            .button-wrapper {{ text-align: center; margin: 28px 0; }}
+            .btn {{ display: inline-block; background-color: #ea580c; color: #ffffff !important; text-decoration: none; font-size: 15px; font-weight: 600; padding: 12px 28px; border-radius: 6px; box-shadow: 0 2px 4px rgba(234, 88, 12, 0.2); }}
+            .notice {{ font-size: 12px; color: #64748b; background-color: #f8fafc; padding: 12px; border-radius: 6px; margin-top: 24px; border: 1px dashed #cbd5e1; }}
+            .footer {{ background-color: #f8fafc; padding: 20px 32px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; }}
           </style>
         </head>
         <body>
-          <div class='card'>
+          <div class='container'>
             <div class='header'>
               <h1>SITRAC</h1>
-              <p>Portal de Mantenimiento y Operarios</p>
+              <p>Sistema Integral de Trabajos, Abastecimiento y Consorcios</p>
             </div>
-            <div class='content'>
-              <p>Hola <strong>{nombreOperario}</strong>,</p>
-              <p>Se ha habilitado tu cuenta para acceder al <strong>Portal Móvil de Operarios de SITRAC</strong>.</p>
+            <div class='body'>
+              <p class='greeting'>Hola {nombreOperario},</p>
+              <p>Se ha habilitado tu acceso como operario en el sistema de gestión y mantenimiento <strong>SITRAC</strong>.</p>
               
-              <div class='highlight-box'>
-                <p style='margin: 0;'><strong>Tu usuario asignado:</strong> <code style='font-size: 15px; color: #ea580c;'>{usuario}</code></p>
+              <div class='credentials-box'>
+                <p><strong>Tu usuario asignado:</strong> <span class='user-badge'>{usuarioDisplay}</span></p>
               </div>
 
-              <p>Para ingresar al sistema desde tu teléfono celular, debes configurar tu <strong>PIN numérico de 4 dígitos</strong> haciendo clic en el siguiente botón:</p>
+              <p>Para ingresar desde tu teléfono celular u ordenador, debes activar tu cuenta y configurar tu <strong>PIN numérico de 4 dígitos</strong>:</p>
 
-              <a href='{activationUrl}' class='btn'>Activar mi PIN de Acceso</a>
+              <div class='button-wrapper'>
+                <a href='{activationUrl}' class='btn' target='_blank'>Configurar mi PIN de 4 dígitos</a>
+              </div>
 
-              <p style='font-size: 12px; color: #64748b;'>Si el botón no funciona, copia y pega este enlace en tu navegador:<br><a href='{activationUrl}'>{activationUrl}</a></p>
-              <p style='font-size: 12px; color: #94a3b8;'>Este enlace tiene una validez de 48 horas.</p>
+              <div class='notice'>
+                <p style='margin: 0 0 6px 0;'><strong>⚠️ Validez limitada:</strong> Por razones de seguridad, este enlace es válido únicamente por <strong>48 horas</strong>.</p>
+                <p style='margin: 0; word-break: break-all;'>Si el botón no funciona, copia y pega el siguiente enlace en tu navegador:<br><a href='{activationUrl}' style='color: #ea580c;'>{activationUrl}</a></p>
+              </div>
             </div>
             <div class='footer'>
-              SITRAC &copy; {DateTime.UtcNow.Year} - Sistema Integral de Trabajos y Abastecimiento para Consorcios
+              SITRAC &copy; {DateTime.UtcNow.Year} - Sistema Integral de Trabajos, Abastecimiento y Consorcios.<br>
+              Este es un correo automático, por favor no respondas a este mensaje.
             </div>
           </div>
         </body>
         </html>";
 
-        return await SendEmailAsync(toEmail, subject, html);
+        return await SendEmailAsync(toEmail, subject, htmlContent, nombreOperario);
     }
 
+    /// <summary>
+    /// Notificación de alerta cuando el stock actual cae por debajo o igual al stock mínimo.
+    /// </summary>
     public async Task<bool> SendAlertaStockBajoAsync(string articuloNombre, decimal stockActual, decimal stockMinimo, string unidadMedida)
     {
         var toEmail = Environment.GetEnvironmentVariable("NOTIFICATIONS__EMAIL__TO")
@@ -211,22 +184,54 @@ public class NotificacionService
         }
 
         var subject = $"⚠️ [SITRAC] Alerta de Stock Bajo: {articuloNombre}";
-        var html = $@"
-        <div style='font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; color: #333;'>
-            <h2 style='color: #dc2626;'>⚠️ Alerta de Stock Bajo — SITRAC</h2>
-            <p>El siguiente artículo se encuentra en o por debajo de su stock mínimo:</p>
-            <table border='1' cellpadding='8' cellspacing='0' style='border-collapse: collapse; width: 100%; max-width: 480px;'>
-                <tr style='background: #f8fafc;'><th align='left'>Artículo</th><td><strong>{articuloNombre}</strong></td></tr>
-                <tr><th align='left'>Stock Actual</th><td style='color: #dc2626; font-weight: bold;'>{stockActual} {unidadMedida}</td></tr>
-                <tr style='background: #f8fafc;'><th align='left'>Stock Mínimo</th><td>{stockMinimo} {unidadMedida}</td></tr>
-                <tr><th align='left'>Fecha y Hora</th><td>{DateTime.UtcNow:dd/MM/yyyy HH:mm} UTC</td></tr>
-            </table>
-            <p style='margin-top: 16px;'>Por favor, gestione la compra o reposición en el sistema a la brevedad.</p>
-        </div>";
+        var htmlContent = $@"
+        <!DOCTYPE html>
+        <html lang='es'>
+        <head>
+          <meta charset='utf-8'>
+          <style>
+            body {{ font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: #f1f5f9; padding: 24px; color: #1e293b; }}
+            .card {{ max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; }}
+            .header {{ background-color: #991b1b; padding: 18px 24px; color: #ffffff; }}
+            .header h2 {{ margin: 0; font-size: 18px; }}
+            .header p {{ margin: 4px 0 0; font-size: 11px; color: #fecaca; text-transform: uppercase; }}
+            .content {{ padding: 24px; font-size: 14px; line-height: 1.5; color: #334155; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }}
+            th, td {{ padding: 10px 12px; border: 1px solid #e2e8f0; }}
+            th {{ background: #f8fafc; text-align: left; color: #475569; }}
+            .critical {{ color: #dc2626; font-weight: 700; }}
+            .footer {{ background: #f8fafc; padding: 14px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; }}
+          </style>
+        </head>
+        <body>
+          <div class='card'>
+            <div class='header'>
+              <h2>⚠️ Alerta de Stock Crítico</h2>
+              <p>SITRAC - Sistema de Pañol y Abastecimiento</p>
+            </div>
+            <div class='content'>
+              <p>El siguiente artículo ha alcanzado o superado el umbral de stock mínimo permitido:</p>
+              <table>
+                <tr><th>Artículo</th><td><strong>{articuloNombre}</strong></td></tr>
+                <tr><th>Stock Actual</th><td class='critical'>{stockActual} {unidadMedida}</td></tr>
+                <tr><th>Stock Mínimo</th><td>{stockMinimo} {unidadMedida}</td></tr>
+                <tr><th>Fecha de Registro</th><td>{DateTime.UtcNow:dd/MM/yyyy HH:mm} UTC</td></tr>
+              </table>
+              <p style='margin-top: 18px; font-size: 13px; color: #64748b;'>Por favor, gestione la compra o reposición en el sistema a la brevedad.</p>
+            </div>
+            <div class='footer'>
+              SITRAC &copy; {DateTime.UtcNow.Year}
+            </div>
+          </div>
+        </body>
+        </html>";
 
-        return await SendEmailAsync(toEmail, subject, html);
+        return await SendEmailAsync(toEmail, subject, htmlContent, "Administrador SITRAC");
     }
 
+    /// <summary>
+    /// Notificación de asignación o reasignación de una Orden de Trabajo.
+    /// </summary>
     public async Task<bool> SendAsignacionOrdenTrabajoAsync(
         string numeroOT,
         string responsable,
@@ -245,20 +250,48 @@ public class NotificacionService
         }
 
         var subject = $"📋 [SITRAC] Nueva OT Asignada: {numeroOT} — {responsable}";
-        var html = $@"
-        <div style='font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; color: #333;'>
-            <h2 style='color: #2563eb;'>📋 Nueva Orden de Trabajo Asignada</h2>
-            <p>Se ha registrado una nueva orden de trabajo con los siguientes detalles:</p>
-            <table border='1' cellpadding='8' cellspacing='0' style='border-collapse: collapse; width: 100%; max-width: 520px;'>
-                <tr style='background: #f8fafc;'><th align='left'>Número de OT</th><td><strong>{numeroOT}</strong></td></tr>
-                <tr><th align='left'>Responsable</th><td>{responsable}</td></tr>
-                <tr style='background: #f8fafc;'><th align='left'>Unidad Funcional</th><td>{unidadFuncional}</td></tr>
-                <tr><th align='left'>Problema reportado</th><td>{problema}</td></tr>
-                <tr style='background: #f8fafc;'><th align='left'>Fecha</th><td>{DateTime.UtcNow:dd/MM/yyyy HH:mm} UTC</td></tr>
-            </table>
-            <p style='margin-top: 16px;'>Ingrese al sistema para gestionar o actualizar el estado de la OT.</p>
-        </div>";
+        var htmlContent = $@"
+        <!DOCTYPE html>
+        <html lang='es'>
+        <head>
+          <meta charset='utf-8'>
+          <style>
+            body {{ font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: #f1f5f9; padding: 24px; color: #1e293b; }}
+            .card {{ max-width: 540px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; }}
+            .header {{ background-color: #1e40af; padding: 18px 24px; color: #ffffff; }}
+            .header h2 {{ margin: 0; font-size: 18px; }}
+            .header p {{ margin: 4px 0 0; font-size: 11px; color: #bfdbfe; text-transform: uppercase; }}
+            .content {{ padding: 24px; font-size: 14px; line-height: 1.5; color: #334155; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }}
+            th, td {{ padding: 10px 12px; border: 1px solid #e2e8f0; }}
+            th {{ background: #f8fafc; text-align: left; color: #475569; }}
+            .footer {{ background: #f8fafc; padding: 14px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; }}
+          </style>
+        </head>
+        <body>
+          <div class='card'>
+            <div class='header'>
+              <h2>📋 Nueva Orden de Trabajo Asignada</h2>
+              <p>SITRAC - Mantenimiento y Operaciones</p>
+            </div>
+            <div class='content'>
+              <p>Se ha registrado y asignado una nueva Orden de Trabajo con el siguiente detalle:</p>
+              <table>
+                <tr><th>Número de OT</th><td><strong>{numeroOT}</strong></td></tr>
+                <tr><th>Responsable</th><td>{responsable}</td></tr>
+                <tr><th>Unidad Funcional</th><td>{unidadFuncional}</td></tr>
+                <tr><th>Problema Reportado</th><td>{problema}</td></tr>
+                <tr><th>Fecha Asignación</th><td>{DateTime.UtcNow:dd/MM/yyyy HH:mm} UTC</td></tr>
+              </table>
+              <p style='margin-top: 18px; font-size: 13px; color: #64748b;'>Ingresá al sistema para consultar los detalles o registrar avances.</p>
+            </div>
+            <div class='footer'>
+              SITRAC &copy; {DateTime.UtcNow.Year}
+            </div>
+          </div>
+        </body>
+        </html>";
 
-        return await SendEmailAsync(toEmail, subject, html);
+        return await SendEmailAsync(toEmail, subject, htmlContent, responsable);
     }
 }
